@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cffetsyn · Guestbook</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0f1226;
+        --card: #1a1f3a;
+        --accent: #7c5cff;
+        --accent-2: #29d3c2;
+        --text: #e8eaff;
+        --muted: #9aa3c7;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        background: radial-gradient(1200px 600px at 20% -10%, #28245c 0%, var(--bg) 55%);
+        color: var(--text);
+        display: flex;
+        justify-content: center;
+        padding: 48px 16px;
+      }
+      .wrap { width: 100%; max-width: 640px; }
+      header { text-align: center; margin-bottom: 32px; }
+      h1 {
+        margin: 0;
+        font-size: 2.4rem;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      header p { color: var(--muted); margin-top: 8px; }
+      .card {
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      }
+      form { display: grid; gap: 12px; margin-bottom: 24px; }
+      input, textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: #0e1230;
+        color: var(--text);
+        font-size: 1rem;
+        resize: vertical;
+      }
+      input:focus, textarea:focus { outline: 2px solid var(--accent); }
+      button {
+        padding: 12px 16px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        color: #0e1230;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      }
+      button:disabled { opacity: 0.6; cursor: not-allowed; }
+      .messages { display: grid; gap: 12px; }
+      .empty { color: var(--muted); text-align: center; padding: 16px 0; }
+      .msg {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 12px 14px;
+        background: #141833;
+      }
+      .msg .meta { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
+      .msg .author { color: var(--accent-2); font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>cffetsyn</h1>
+        <p>A tiny FastAPI guestbook starter</p>
+      </header>
+      <div class="card">
+        <form id="form">
+          <input id="author" name="author" placeholder="Your name" maxlength="50" required />
+          <textarea id="text" name="text" rows="3" placeholder="Leave a message…" maxlength="500" required></textarea>
+          <button id="submit" type="submit">Post message</button>
+        </form>
+        <div id="messages" class="messages"></div>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("form");
+      const messagesEl = document.getElementById("messages");
+      const submitBtn = document.getElementById("submit");
+
+      function render(messages) {
+        if (!messages.length) {
+          messagesEl.innerHTML = '<div class="empty">No messages yet — be the first!</div>';
+          return;
+        }
+        messagesEl.innerHTML = messages
+          .slice()
+          .reverse()
+          .map((m) => {
+            const when = new Date(m.created_at).toLocaleString();
+            return `<div class="msg"><div class="meta"><span class="author">${escapeHtml(
+              m.author
+            )}</span><span>${when}</span></div><div>${escapeHtml(m.text)}</div></div>`;
+          })
+          .join("");
+      }
+
+      function escapeHtml(value) {
+        const div = document.createElement("div");
+        div.textContent = value;
+        return div.innerHTML;
+      }
+
+      async function load() {
+        const res = await fetch("/api/messages");
+        render(await res.json());
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        submitBtn.disabled = true;
+        try {
+          const res = await fetch("/api/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              author: document.getElementById("author").value,
+              text: document.getElementById("text").value,
+            }),
+          });
+          if (res.ok) {
+            document.getElementById("text").value = "";
+            await load();
+          }
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+
+      load();
+    </script>
+  </body>
+</html>
