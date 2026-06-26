@@ -1,0 +1,158 @@
+{
+    "PC": {
+        "layer_type": "metal",
+        "layer_number": 7,
+        "layer_name": "PC",
+        "direction": "V",
+        "offset": 0.0,
+        "pitch": 45.0,
+        "width": 16.0,
+        "info": "PC in layer",
+        "gds_layer": 7,
+        "gds_datatype": 0
+    },
+    "CA": {
+        "layer_type": "via",
+        "layer_number": 14,
+        "layer_name": "CA",
+        "upper_layer": "M0",
+        "lower_layer": "PC",
+        "info": "CA in layer",
+        "gds_layer": 14,
+        "gds_datatype": 0
+    },
+    "M0": {
+        "layer_type": "metal",
+        "layer_number": 15,
+        "layer_name": "M0",
+        "direction": "H",
+        "offset": 0.0,
+        "pitch": 24,
+        "width": 14.0,
+        "horizontal_enclosure": 3.0,
+        "vertical_enclosure": 0.0,
+        "info": "M0 in layer",
+        "gds_layer": 15,
+        "gds_datatype": 0
+    },
+    "V0": {
+        "layer_type": "via",
+        "layer_number": 18,
+        "layer_name": "V0",
+        "upper_layer": "M1",
+        "lower_layer": "M0",
+        "info": "V0 in layer",
+        "gds_layer": 18,
+        "gds_datatype": 0
+    },
+    "M1": {
+        "layer_type": "metal",
+        "layer_number": 19,
+        "layer_name": "M1",
+        "direction": "V",
+        "offset": 0.0,
+        "pitch": 30.0,
+        "width": 14.0,
+        "horizontal_enclosure": 0.5,
+        "vertical_enclosure": 5.0,
+        "info": "M1 in layer",
+        "gds_layer": 19,
+        "gds_datatype": 0
+    },
+    "V1": {
+        "layer_type": "via",
+        "layer_number": 21,
+        "layer_name": "V1",
+        "upper_layer": "M2",
+        "lower_layer": "M1",
+        "info": "V1 in layer",
+        "gds_layer": 21,
+        "gds_datatype": 0
+    },
+    "M2": {
+        "layer_type": "metal",
+        "layer_number": 20,
+        "layer_name": "M2",
+        "direction": "H",
+        "offset": 0.0,
+        "pitch": 24.0,
+        "width": 14.0,
+        "horizontal_enclosure": 5.0,
+        "vertical_enclosure": 0.0,
+        "info": "M2 in layer",
+        "gds_layer": 20,
+        "gds_datatype": 0
+    },
+    "WELL": {
+        "layer_type": "gds",
+        "layer_number": 1,
+        "layer_name": "WELL",
+        "gds_layer": 1,
+        "gds_datatype": 0,
+        "info": "GDS device layer (1,0) for 3D"
+    },
+    "FIN": {
+        "layer_type": "gds",
+        "layer_number": 2,
+        "layer_name": "FIN",
+        "gds_layer": 2,
+        "gds_datatype": 0,
+        "info": "GDS device layer (2,0) for 3D"
+    },
+    "GATE_CUT": {
+        "layer_type": "gds",
+        "layer_number": 10,
+        "layer_name": "GATE_CUT",
+        "gds_layer": 10,
+        "gds_datatype": 0,
+        "info": "GDS device layer (10,0) for 3D"
+    },
+    "ACTIVE": {
+        "layer_type": "gds",
+        "layer_number": 11,
+        "layer_name": "ACTIVE",
+        "gds_layer": 11,
+        "gds_datatype": 0,
+        "info": "GDS device layer (11,0) for 3D"
+    },
+    "NSELECT": {
+        "layer_type": "gds",
+        "layer_number": 12,
+        "layer_name": "NSELECT",
+        "gds_layer": 12,
+        "gds_datatype": 0,
+        "info": "GDS device layer (12,0) for 3D"
+    },
+    "PSELECT": {
+        "layer_type": "gds",
+        "layer_number": 13,
+        "layer_name": "PSELECT",
+        "gds_layer": 13,
+        "gds_datatype": 0,
+        "info": "GDS device layer (13,0) for 3D"
+    },
+    "LIG": {
+        "layer_type": "gds",
+        "layer_number": 16,
+        "layer_name": "LIG",
+        "gds_layer": 16,
+        "gds_datatype": 0,
+        "info": "GDS device layer (16,0) for 3D"
+    },
+    "LISD": {
+        "layer_type": "gds",
+        "layer_number": 17,
+        "layer_name": "LISD",
+        "gds_layer": 17,
+        "gds_datatype": 0,
+        "info": "GDS device layer (17,0) for 3D"
+    },
+    "SDT": {
+        "layer_type": "gds",
+        "layer_number": 13.5,
+        "layer_name": "SDT",
+        "gds_layer": 88,
+        "gds_datatype": 0,
+        "info": "GDS device layer (88,0) for 3D"
+    }
+}

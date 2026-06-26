@@ -1,0 +1,30 @@
+# SMTCell tool configuration -- copy to config.mk and edit:
+#
+#     cp config.mk.example config.mk
+#
+# config.mk is gitignored and never committed. The Makefile auto-includes it,
+# so any value set here overrides the matching default. Tools left unset fall
+# back to the bare command name, resolved on your PATH (so a `module load` /
+# vendor setup script just works). See the "Tool Setup" section in the README.
+
+# Single install root: when set, every tool default resolves to
+# $(TOOLS_DIR)/<command>. Leave commented to rely on PATH instead.
+# TOOLS_DIR = /home/you/eda/bin
+
+# Layout / format conversion
+# KLAYOUT     = /path/to/klayout
+# GDT2GDS     = /path/to/gdt2gds.Linux
+# GDS2GDT     = /path/to/gds2gdt.Linux
+
+# Python interpreter (defaults to `which python3`)
+# PYTHON = /path/to/python3
+
+# CAD sign-off tools (Cadence / Synopsys)
+# PEGASUS     = /path/to/pegasus
+# QUANTUS     = /path/to/quantus
+# QRCTECHGEN  = /path/to/Techgen
+# LIBERATE    = /path/to/liberate
+# ICVALIDATOR = /path/to/icv
+
+# Optional cluster job-scheduler prefix (prepended to heavy recipes)
+# QUEUE = bsub -I

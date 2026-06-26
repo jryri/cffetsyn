@@ -1,0 +1,52 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# === Virtual environments ===
+# README bootstraps via `python -m venv smtcell`
+smtcell/
+.venv/
+venv/
+env/
+ENV/
+
+# === Local tool configuration (machine-specific; see config.mk.example) ===
+config.mk
+
+# === Generated build artifacts (reproducible via `make config/spnr/gds/lef`) ===
+output/
+
+# === EDA / solver artifacts (in case any land outside output/) ===
+*.res
+*.var
+*.glb
+**/gds/*.gds
+**/gds/*.gdt
+**/gdt/*.gdt
+**/lef/*.lef
+**/view/*.png
+**/view/*.glb
+
+# === Local scratch / throwaway artifacts ===
+.trash/
+*.tmp
+*.bak
+*.orig
+
+# === Editor / IDE / OS ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

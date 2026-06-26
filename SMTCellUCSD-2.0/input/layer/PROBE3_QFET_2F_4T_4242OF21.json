@@ -1,0 +1,270 @@
+{
+    "BM1" : {
+        "layer_type" : "metal",
+        "layer_number" : 1,
+        "layer_name" : "BM1",
+        "direction" : "V",
+        "offset" : 21.0,
+        "pitch" : 42.0,
+        "width" : 14.0,
+        "horizontal_enclosure" : 0.5,
+        "vertical_enclosure" : 5.0,
+        "gds_layer" : 519,
+        "gds_datatype" : 0
+    },
+    "BV0" : {
+        "layer_type" : "via",
+        "layer_number" : 2,
+        "layer_name" : "BV0",
+        "upper_layer" : "BM0",
+        "lower_layer" : "BM1",
+        "gds_layer" : 518,
+        "gds_datatype" : 0
+    },
+    "BM0" : {
+        "layer_type" : "metal",
+        "layer_number" : 3,
+        "layer_name" : "BM0",
+        "direction" : "H",
+        "offset" : 0.0,
+        "pitch" : 24.0,
+        "width" : 14.0,
+        "horizontal_enclosure" : 3.0,
+        "vertical_enclosure" : 0.0,
+        "io_pin" : true,
+        "gds_layer" : 515,
+        "gds_datatype" : 0
+    },
+    "BCA1" : {
+        "layer_type" : "via",
+        "layer_number" : 6,
+        "layer_name" : "BCA1",
+        "upper_layer" : "BPC1",
+        "lower_layer" : "BM0",
+        "gds_layer" : 514,
+        "gds_datatype" : 0
+    },
+    "BPC1" : {
+        "layer_type" : "metal",
+        "layer_number" : 7,
+        "layer_name" : "BPC1",
+        "direction" : "V",
+        "offset" : 0.0,
+        "pitch" : 42.0,
+        "width" : 16.0,
+        "horizontal_enclosure" : 0.5,
+        "vertical_enclosure" : 5.0,
+        "gds_layer" : 57,
+        "gds_datatype" : 0
+    },
+    "MIV1" : {
+        "layer_type" : "via",
+        "layer_number" : 8,
+        "layer_name" : "MIV1",
+        "upper_layer" : "H0",
+        "lower_layer" : "BPC1",
+        "gds_layer" : 5000,
+        "gds_datatype" : 0
+    },
+    "H0" : {
+        "layer_type" : "metal",
+        "layer_number" : 9,
+        "layer_name" : "H0",
+        "direction" : "H",
+        "offset" : 0.0,
+        "pitch" : 24.0,
+        "width" : 14.0,
+        "horizontal_enclosure" : 3.0,
+        "vertical_enclosure" : 0.0,
+        "gds_layer" : 600,
+        "gds_datatype" : 0
+    },
+    "MIV2" : {
+        "layer_type" : "via",
+        "layer_number" : 10,
+        "layer_name" : "MIV2",
+        "upper_layer" : "H1",
+        "lower_layer" : "H0",
+        "gds_layer" : 5001,
+        "gds_datatype" : 0
+    },
+    "H1" : {
+        "layer_type" : "metal",
+        "layer_number" : 11,
+        "layer_name" : "H1",
+        "direction" : "V",
+        "offset" : 21.0,
+        "pitch" : 42.0,
+        "width" : 16.0,
+        "horizontal_enclosure" : 0.5,
+        "vertical_enclosure" : 5.0,
+        "gds_layer" : 601,
+        "gds_datatype" : 0
+    },
+    "MIV3" : {
+        "layer_type" : "via",
+        "layer_number" : 12,
+        "layer_name" : "MIV3",
+        "upper_layer" : "PC1",
+        "lower_layer" : "H1",
+        "gds_layer" : 5002,
+        "gds_datatype" : 0
+    },
+    "PC1" : {
+        "layer_type" : "metal",
+        "layer_number" : 13,
+        "layer_name" : "PC1",
+        "direction" : "V",
+        "offset" : 0.0,
+        "pitch" : 42.0,
+        "width" : 16.0,
+        "horizontal_enclosure" : 0.5,
+        "vertical_enclosure" : 5.0,
+        "gds_layer" : 7,
+        "gds_datatype" : 0
+    },
+    "CA1" : {
+        "layer_type" : "via",
+        "layer_number" : 14,
+        "layer_name" : "CA1",
+        "upper_layer" : "M0",
+        "lower_layer" : "PC1",
+        "gds_layer" : 14,
+        "gds_datatype" : 0
+    },
+    "M0" : {
+        "layer_type" : "metal",
+        "layer_number" : 15,
+        "layer_name" : "M0",
+        "direction" : "H",
+        "offset" : 0.0,
+        "pitch" : 24.0,
+        "width" : 14.0,
+        "horizontal_enclosure" : 3.0,
+        "vertical_enclosure" : 0.0,
+        "io_pin" : true,
+        "gds_layer" : 15,
+        "gds_datatype" : 0
+    },
+    "V0" : {
+        "layer_type" : "via",
+        "layer_number" : 16,
+        "layer_name" : "V0",
+        "upper_layer" : "M1",
+        "lower_layer" : "M0",
+        "gds_layer" : 18,
+        "gds_datatype" : 0
+    },
+    "M1" : {
+        "layer_type" : "metal",
+        "layer_number" : 17,
+        "layer_name" : "M1",
+        "direction" : "V",
+        "offset" : 21.0,
+        "pitch" : 42.0,
+        "width" : 14.0,
+        "horizontal_enclosure" : 0.5,
+        "vertical_enclosure" : 5.0,
+        "gds_layer" : 19,
+        "gds_datatype" : 0
+    },
+    "VL1" : {
+        "layer_type" : "virtual",
+        "layer_number" : 18,
+        "layer_name" : "VL1",
+        "lower_layer" : "BPC1",
+        "upper_layer" : "PC1",
+        "method" : "overlap",
+        "gds_layer" : 700,
+        "gds_datatype" : 0
+    },
+    "BOUNDARY" : {
+        "layer_type" : "gds",
+        "layer_name" : "BOUNDARY",
+        "gds_layer" : 100
+    },
+    "WELL_FRONT" : {
+        "layer_type" : "gds",
+        "layer_name" : "WELL_FRONT",
+        "gds_layer" : 1
+    },
+    "WELL_BACK" : {
+        "layer_type" : "gds",
+        "layer_name" : "WELL_BACK",
+        "gds_layer" : 51
+    },
+    "PSELECT_FRONT" : {
+        "layer_type" : "gds",
+        "layer_name" : "PSELECT_FRONT",
+        "gds_layer" : 13
+    },
+    "NSELECT_FRONT" : {
+        "layer_type" : "gds",
+        "layer_name" : "NSELECT_FRONT",
+        "gds_layer" : 12
+    },
+    "PSELECT_BACK" : {
+        "layer_type" : "gds",
+        "layer_name" : "PSELECT_BACK",
+        "gds_layer" : 513
+    },
+    "NSELECT_BACK" : {
+        "layer_type" : "gds",
+        "layer_name" : "NSELECT_BACK",
+        "gds_layer" : 512
+    },
+    "ACTIVE_FRONT_P" : {
+        "layer_type" : "gds",
+        "layer_name" : "ACTIVE_FRONT_P",
+        "gds_layer" : 11,
+        "gds_datatype" : 1
+    },
+    "ACTIVE_FRONT_N" : {
+        "layer_type" : "gds",
+        "layer_name" : "ACTIVE_FRONT_N",
+        "gds_layer" : 11,
+        "gds_datatype" : 2
+    },
+    "ACTIVE_BACK_P" : {
+        "layer_type" : "gds",
+        "layer_name" : "ACTIVE_BACK_P",
+        "gds_layer" : 511,
+        "gds_datatype" : 1
+    },
+    "ACTIVE_BACK_N" : {
+        "layer_type" : "gds",
+        "layer_name" : "ACTIVE_BACK_N",
+        "gds_layer" : 511,
+        "gds_datatype" : 2
+    },
+    "GATE_CUT_FRONT" : {
+        "layer_type" : "gds",
+        "layer_name" : "GATE_CUT_FRONT",
+        "gds_layer" : 10
+    },
+    "GATE_CUT_BACK" : {
+        "layer_type" : "gds",
+        "layer_name" : "GATE_CUT_BACK",
+        "gds_layer" : 510
+    },
+    "LISD1" : {
+        "layer_type" : "gds",
+        "layer_name" : "LISD1",
+        "gds_layer" : 17
+    },
+    "BLISD1" : {
+        "layer_type" : "gds",
+        "layer_name" : "BLISD1",
+        "gds_layer" : 517
+    },
+    "SDT1" : {
+        "layer_type" : "gds",
+        "layer_name" : "SDT1",
+        "gds_layer" : 88
+    },
+    "BSDT1" : {
+        "layer_type" : "gds",
+        "layer_name" : "BSDT1",
+        "gds_layer" : 588
+    }
+}
