@@ -1,0 +1,1317 @@
+From 2aaa5c7e43622af882acf53f185092ca14e44ca9 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 01:58:18 +0000
+Subject: [PATCH 01/16] feat(cfet): add CFET_3T_SH preset and 3T layer JSON
+
+---
+ input/layer/PROBE3_CFET_2F_3T_4530OF0.json | 234 +++++++++++++++++++++
+ input/presets/CFET_3T_SH.mk                |  10 +
+ 2 files changed, 244 insertions(+)
+ create mode 100644 input/layer/PROBE3_CFET_2F_3T_4530OF0.json
+ create mode 100644 input/presets/CFET_3T_SH.mk
+
+diff --git a/input/layer/PROBE3_CFET_2F_3T_4530OF0.json b/input/layer/PROBE3_CFET_2F_3T_4530OF0.json
+new file mode 100644
+index 0000000..1353185
+--- /dev/null
++++ b/input/layer/PROBE3_CFET_2F_3T_4530OF0.json
+@@ -0,0 +1,234 @@
++{
++    "BPC": {
++        "layer_type": "metal",
++        "layer_number": 6,
++        "layer_name": "BPC",
++        "direction": "V",
++        "offset": 0.0,
++        "pitch": 45.0,
++        "width": 16.0,
++        "info": "Bottom Poly Contact layer for CFET",
++        "gds_layer": 6,
++        "gds_datatype": 0
++    },
++    "BCA": {
++        "layer_type": "via",
++        "layer_number": 8,
++        "layer_name": "BCA",
++        "upper_layer": "M0",
++        "lower_layer": "BPC",
++        "info": "Bottom Contact via (BPC to M0)"
++    },
++    "PC": {
++        "layer_type": "metal",
++        "layer_number": 7,
++        "layer_name": "PC",
++        "direction": "V",
++        "offset": 0.0,
++        "pitch": 45.0,
++        "width": 16.0,
++        "info": "Poly Contact layer",
++        "gds_layer": 7,
++        "gds_datatype": 1
++    },
++    "CA": {
++        "layer_type": "via",
++        "layer_number": 14,
++        "layer_name": "CA",
++        "upper_layer": "M0",
++        "lower_layer": "PC",
++        "info": "Contact via (PC to M0)",
++        "gds_layer": 14,
++        "gds_datatype": 0
++    },
++    "M0": {
++        "layer_type": "metal",
++        "layer_number": 15,
++        "layer_name": "M0",
++        "direction": "H",
++        "offset": 0.0,
++        "pitch": 24,
++        "width": 14.0,
++        "horizontal_enclosure": 3.0,
++        "vertical_enclosure": 0.0,
++        "info": "Metal 0 horizontal routing layer",
++        "gds_layer": 15,
++        "gds_datatype": 0
++    },
++    "V0": {
++        "layer_type": "via",
++        "layer_number": 18,
++        "layer_name": "V0",
++        "upper_layer": "M1",
++        "lower_layer": "M0",
++        "info": "Via 0 (M0 to M1)",
++        "gds_layer": 18,
++        "gds_datatype": 0
++    },
++    "M1": {
++        "layer_type": "metal",
++        "layer_number": 19,
++        "layer_name": "M1",
++        "direction": "V",
++        "offset": 0.0,
++        "pitch": 30.0,
++        "width": 14.0,
++        "horizontal_enclosure": 0.5,
++        "vertical_enclosure": 5.0,
++        "info": "Metal 1 vertical routing layer",
++        "gds_layer": 19,
++        "gds_datatype": 0
++    },
++    "V1": {
++        "layer_type": "via",
++        "layer_number": 21,
++        "layer_name": "V1",
++        "upper_layer": "M2",
++        "lower_layer": "M1",
++        "info": "Via 1 (M1 to M2)",
++        "gds_layer": 21,
++        "gds_datatype": 0
++    },
++    "M2": {
++        "layer_type": "metal",
++        "layer_number": 20,
++        "layer_name": "M2",
++        "direction": "H",
++        "offset": 0.0,
++        "pitch": 24.0,
++        "width": 14.0,
++        "horizontal_enclosure": 5.0,
++        "vertical_enclosure": 0.0,
++        "info": "Metal 2 horizontal routing layer",
++        "gds_layer": 20,
++        "gds_datatype": 0
++    },
++    "WELL": {
++        "layer_type": "gds",
++        "layer_number": 1,
++        "layer_name": "WELL",
++        "gds_layer": 1,
++        "gds_datatype": 0,
++        "info": "GDS device layer (1,0) for 3D"
++    },
++    "FIN": {
++        "layer_type": "gds",
++        "layer_number": 2,
++        "layer_name": "FIN",
++        "gds_layer": 2,
++        "gds_datatype": 0,
++        "info": "GDS device layer (2,0) for 3D"
++    },
++    "GATE": {
++        "layer_type": "gds",
++        "layer_number": 7,
++        "layer_name": "GATE",
++        "gds_layer": 7,
++        "gds_datatype": 0,
++        "info": "GDS device layer (7,0) for 3D"
++    },
++    "GATE_CUT": {
++        "layer_type": "gds",
++        "layer_number": 10,
++        "layer_name": "GATE_CUT",
++        "gds_layer": 10,
++        "gds_datatype": 0,
++        "info": "GDS device layer (10,0) for 3D"
++    },
++    "ACTIVE": {
++        "layer_type": "gds",
++        "layer_number": 11,
++        "layer_name": "ACTIVE",
++        "gds_layer": 11,
++        "gds_datatype": 0,
++        "info": "GDS device layer (11,0) for 3D"
++    },
++    "P_ACTIVE": {
++        "layer_type": "gds",
++        "layer_number": 11,
++        "layer_name": "P_ACTIVE",
++        "gds_layer": 11,
++        "gds_datatype": 1,
++        "info": "GDS device layer (11,1) for 3D"
++    },
++    "N_ACTIVE": {
++        "layer_type": "gds",
++        "layer_number": 11,
++        "layer_name": "N_ACTIVE",
++        "gds_layer": 11,
++        "gds_datatype": 2,
++        "info": "GDS device layer (11,2) for 3D"
++    },
++    "NSELECT": {
++        "layer_type": "gds",
++        "layer_number": 12,
++        "layer_name": "NSELECT",
++        "gds_layer": 12,
++        "gds_datatype": 0,
++        "info": "GDS device layer (12,0) for 3D"
++    },
++    "PSELECT": {
++        "layer_type": "gds",
++        "layer_number": 13,
++        "layer_name": "PSELECT",
++        "gds_layer": 13,
++        "gds_datatype": 0,
++        "info": "GDS device layer (13,0) for 3D"
++    },
++    "LIG": {
++        "layer_type": "gds",
++        "layer_number": 16,
++        "layer_name": "LIG",
++        "gds_layer": 16,
++        "gds_datatype": 0,
++        "info": "GDS device layer (16,0) for 3D"
++    },
++    "LISD": {
++        "layer_type": "gds",
++        "layer_number": 17,
++        "layer_name": "LISD",
++        "gds_layer": 17,
++        "gds_datatype": 0,
++        "info": "GDS device layer (17,0) for 3D"
++    },
++    "P_LISD": {
++        "layer_type": "gds",
++        "layer_number": 17,
++        "layer_name": "P_LISD",
++        "gds_layer": 17,
++        "gds_datatype": 1,
++        "info": "GDS device layer (17,1) for 3D"
++    },
++    "N_LISD": {
++        "layer_type": "gds",
++        "layer_number": 17,
++        "layer_name": "N_LISD",
++        "gds_layer": 17,
++        "gds_datatype": 2,
++        "info": "GDS device layer (17,2) for 3D"
++    },
++    "SDT": {
++        "layer_type": "gds",
++        "layer_number": 13.5,
++        "layer_name": "SDT",
++        "gds_layer": 88,
++        "gds_datatype": 0,
++        "info": "GDS device layer (88,0) for 3D"
++    },
++    "P_SDT": {
++        "layer_type": "gds",
++        "layer_number": 13.5,
++        "layer_name": "P_SDT",
++        "gds_layer": 88,
++        "gds_datatype": 1,
++        "info": "GDS device layer (88,1) for 3D"
++    },
++    "N_SDT": {
++        "layer_type": "gds",
++        "layer_number": 13.5,
++        "layer_name": "N_SDT",
++        "gds_layer": 88,
++        "gds_datatype": 2,
++        "info": "GDS device layer (88,2) for 3D"
++    }
++}
+\ No newline at end of file
+diff --git a/input/presets/CFET_3T_SH.mk b/input/presets/CFET_3T_SH.mk
+new file mode 100644
+index 0000000..53fcf8c
+--- /dev/null
++++ b/input/presets/CFET_3T_SH.mk
+@@ -0,0 +1,10 @@
++# CFET 3-Track SH preset (M0ICPD in-cell power)
++TECH          = CFET
++HEIGHT_CONFIG = SH
++CHANNEL       = 2F
++TRACK         = 3
++CPP           = 45
++M1P           = 30
++M1OF          = 0
++CDL_FILE      = input/cdl/PROBE_2F4T.cdl
++CELL_NAME     = INV_X1
+-- 
+2.43.0
+
+
+From c2939b3126d045319136ed9e8ceaeb7b5f796f61 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 02:03:12 +0000
+Subject: [PATCH 02/16] feat(cfet): add M0ICPD power_config for TRACK=3
+
+---
+ src/cellgen/archit/CFET/tech.py | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/src/cellgen/archit/CFET/tech.py b/src/cellgen/archit/CFET/tech.py
+index 5bb39d4..16bb756 100644
+--- a/src/cellgen/archit/CFET/tech.py
++++ b/src/cellgen/archit/CFET/tech.py
+@@ -87,7 +87,14 @@ class CFET_Tech:
+         # TODO: parameterize the magic constants below.                      #
+         # Needed by downstream GDS / LEF generation (not by the CP-SAT model).#
+         # ------------------------------------------------------------------ #
+-        self.power_config = "M0BPR"
++        if height_config == "SH" and num_rt_track == 3:
++            self.power_config = "M0ICPD"
++        elif height_config == "SH" and num_rt_track == 4:
++            self.power_config = "M0BPR"
++        else:
++            raise NotImplementedError(
++                f"CFET SH power_config undefined for num_rt_track={num_rt_track}"
++            )
+         self.wall_thickness = 0.019
+         self.power_rail_thickness = 0.036
+         self.m0_power_rail_thickness = 0.036
+-- 
+2.43.0
+
+
+From f9fd3947e136c6b6344f45dc37eef85538c4e1a9 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 02:08:03 +0000
+Subject: [PATCH 03/16] fix(cfet): preserve M0BPR power_config for 2T CFET
+
+---
+ src/cellgen/archit/CFET/tech.py | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/cellgen/archit/CFET/tech.py b/src/cellgen/archit/CFET/tech.py
+index 16bb756..ef28ee0 100644
+--- a/src/cellgen/archit/CFET/tech.py
++++ b/src/cellgen/archit/CFET/tech.py
+@@ -87,13 +87,13 @@ class CFET_Tech:
+         # TODO: parameterize the magic constants below.                      #
+         # Needed by downstream GDS / LEF generation (not by the CP-SAT model).#
+         # ------------------------------------------------------------------ #
+-        if height_config == "SH" and num_rt_track == 3:
++        if self.num_rt_track == 3:
+             self.power_config = "M0ICPD"
+-        elif height_config == "SH" and num_rt_track == 4:
++        elif self.num_rt_track in (2, 4):
+             self.power_config = "M0BPR"
+         else:
+             raise NotImplementedError(
+-                f"CFET SH power_config undefined for num_rt_track={num_rt_track}"
++                f"CFET SH power_config undefined for num_rt_track={self.num_rt_track}"
+             )
+         self.wall_thickness = 0.019
+         self.power_rail_thickness = 0.036
+-- 
+2.43.0
+
+
+From 20f271f23b2fc35a1127bba428d569568475e659 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 02:12:52 +0000
+Subject: [PATCH 04/16] feat(cfet): symmetric 3T signal pin rows for M0ICPD
+
+---
+ src/cellgen/archit/CFET/main.py | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
+
+diff --git a/src/cellgen/archit/CFET/main.py b/src/cellgen/archit/CFET/main.py
+index 79e1375..7fab619 100644
+--- a/src/cellgen/archit/CFET/main.py
++++ b/src/cellgen/archit/CFET/main.py
+@@ -193,6 +193,8 @@ class CFET:
+         self.pmos_placeable_row_indices = []
+         self.nmos_pin_access_ri = []
+         self.pmos_pin_access_ri = []
++        self.signal_row_indices = []
++        self.power_row_indices = {}
+         # device-layer resolution (populated by _init_tech)
+         self.pmos_layer = None
+         self.nmos_layer = None
+@@ -501,14 +503,11 @@ class CFET:
+                 self.nmos_pin_access_ri = top_pin_row
+                 self.pmos_pin_access_ri = bottom_boundary_rows
+         elif self.c_tech.height_config == "SH" and self.c_tech.num_rt_track == 3:
+-            top_pin_row = [1]                    # single middle row for top device
+-            bottom_boundary_rows = [0, 1]        # first & last for bottom device (2-row layer)
+-            if self.c_tech.stacking_config == "P_on_N":
+-                self.pmos_pin_access_ri = top_pin_row
+-                self.nmos_pin_access_ri = bottom_boundary_rows
+-            else:  # N_on_P
+-                self.nmos_pin_access_ri = top_pin_row
+-                self.pmos_pin_access_ri = bottom_boundary_rows
++            signal_rows = [1, 2, 3, 4]
++            self.signal_row_indices = signal_rows
++            self.power_row_indices = {0: "VSS", 5: "VDD"}
++            self.nmos_pin_access_ri = list(signal_rows)
++            self.pmos_pin_access_ri = list(signal_rows)
+         logger.info(
+             f"\tNMOS pin accessible rows: {self.nmos_pin_access_ri}, "
+             f"PMOS pin accessible rows: {self.pmos_pin_access_ri}"
+-- 
+2.43.0
+
+
+From a579bc0ef6426783f30b575e0cc755899fd8b37c Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 02:17:54 +0000
+Subject: [PATCH 05/16] feat(cfet): BPC signal rows and overlap virtual connect
+ for M0ICPD
+
+---
+ src/cellgen/archit/CFET/main.py | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/src/cellgen/archit/CFET/main.py b/src/cellgen/archit/CFET/main.py
+index 7fab619..916ae14 100644
+--- a/src/cellgen/archit/CFET/main.py
++++ b/src/cellgen/archit/CFET/main.py
+@@ -560,12 +560,18 @@ class CFET:
+ 
+         # For vertical layers, specify rows so they connect to horizontal layers.
+         # Top placement layer (directly accessible from M0) gets all M0 rows.
+-        # Bottom placement layer only gets its boundary rows (first & last M0 rows)
+-        # - interior rows are unreachable (no pins, no long vias) and bloat the model.
++        # Bottom placement layer uses boundary rows by default. For M0ICPD, BPC
++        # only exists on signal rows, so exclude the power rows.
+         m0_rows = h_layer_rows.get("M0", [])
+         top_layer = self.c_tech.get_top_placement_layer()
+         bottom_layer = self.c_tech.get_bottom_placement_layer()
+-        bottom_rows = [m0_rows[0], m0_rows[-1]] if len(m0_rows) >= 2 else m0_rows
++        if self.c_tech.power_config == "M0ICPD":
++            # BPC only on signal rows; exclude power rows 0 and 5.
++            bottom_rows = m0_rows[1:5] if len(m0_rows) >= 6 else m0_rows[1:-1]
++            vconnect_method = "overlap"
++        else:
++            bottom_rows = [m0_rows[0], m0_rows[-1]] if len(m0_rows) >= 2 else m0_rows
++            vconnect_method = "boundary"
+         for layer in self.c_tech.layer_stack.metal_layers:
+             if layer.direction == "V" and layer.layer_name == top_layer:
+                 layer_to_rows[layer.layer_name] = m0_rows
+@@ -582,7 +588,7 @@ class CFET:
+             layer_to_direction=layer_to_direction,
+             layer_to_kind=self.c_tech.layer_to_kind,
+             virtual_connect_pairs=[("BPC", "M0")],
+-            virtual_connect_method="boundary",
++            virtual_connect_method=vconnect_method,
+         )
+         self.lgg.stats()
+ 
+-- 
+2.43.0
+
+
+From 16528cca8c90b3f94b9c863efb64405df4fc4378 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 02:23:49 +0000
+Subject: [PATCH 06/16] fix(cfet): use fine M0 rows for M0ICPD graph
+
+---
+ src/cellgen/archit/CFET/main.py | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/src/cellgen/archit/CFET/main.py b/src/cellgen/archit/CFET/main.py
+index 916ae14..29bfbc4 100644
+--- a/src/cellgen/archit/CFET/main.py
++++ b/src/cellgen/archit/CFET/main.py
+@@ -553,7 +553,10 @@ class CFET:
+         for layer in self.c_tech.layer_stack.metal_layers:
+             if layer.direction == "V":
+                 continue
+-            tmp_pitch = layer.pitch if layer.layer_name in placement_layers else layer.pitch * 2
++            if self.c_tech.power_config == "M0ICPD" and layer.layer_name == "M0":
++                tmp_pitch = layer.pitch
++            else:
++                tmp_pitch = layer.pitch if layer.layer_name in placement_layers else layer.pitch * 2
+             tmp_offset = layer.offset
+             num_rows = int(math.ceil((self.canvas_height - tmp_offset) / tmp_pitch))
+             h_layer_rows[layer.layer_name] = [tmp_offset + i * tmp_pitch for i in range(num_rows)]
+@@ -567,7 +570,9 @@ class CFET:
+         bottom_layer = self.c_tech.get_bottom_placement_layer()
+         if self.c_tech.power_config == "M0ICPD":
+             # BPC only on signal rows; exclude power rows 0 and 5.
+-            bottom_rows = m0_rows[1:5] if len(m0_rows) >= 6 else m0_rows[1:-1]
++            if len(m0_rows) < 6:
++                raise ValueError("M0ICPD expects 6 M0 fine rows")
++            bottom_rows = m0_rows[1:5]
+             vconnect_method = "overlap"
+         else:
+             bottom_rows = [m0_rows[0], m0_rows[-1]] if len(m0_rows) >= 2 else m0_rows
+-- 
+2.43.0
+
+
+From d327fd9cc50822d01a93b419f3a0abc7c0b6925d Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 02:29:39 +0000
+Subject: [PATCH 07/16] fix(cfet): preserve global row indices for M0ICPD BPC
+
+---
+ src/cellgen/archit/CFET/main.py | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/src/cellgen/archit/CFET/main.py b/src/cellgen/archit/CFET/main.py
+index 29bfbc4..32f3475 100644
+--- a/src/cellgen/archit/CFET/main.py
++++ b/src/cellgen/archit/CFET/main.py
+@@ -563,16 +563,18 @@ class CFET:
+ 
+         # For vertical layers, specify rows so they connect to horizontal layers.
+         # Top placement layer (directly accessible from M0) gets all M0 rows.
+-        # Bottom placement layer uses boundary rows by default. For M0ICPD, BPC
+-        # only exists on signal rows, so exclude the power rows.
++        # Bottom placement layer uses boundary rows by default. For M0ICPD, keep
++        # all fine rows so PC/BPC/M0 share top-view row indices.
+         m0_rows = h_layer_rows.get("M0", [])
+         top_layer = self.c_tech.get_top_placement_layer()
+         bottom_layer = self.c_tech.get_bottom_placement_layer()
+         if self.c_tech.power_config == "M0ICPD":
+-            # BPC only on signal rows; exclude power rows 0 and 5.
+-            if len(m0_rows) < 6:
+-                raise ValueError("M0ICPD expects 6 M0 fine rows")
+-            bottom_rows = m0_rows[1:5]
++            expected_m0_rows = self.c_tech.num_rt_track * 2
++            if len(m0_rows) != expected_m0_rows:
++                raise ValueError(
++                    f"M0ICPD expects {expected_m0_rows} M0 fine rows; actual {len(m0_rows)}"
++                )
++            bottom_rows = m0_rows
+             vconnect_method = "overlap"
+         else:
+             bottom_rows = [m0_rows[0], m0_rows[-1]] if len(m0_rows) >= 2 else m0_rows
+-- 
+2.43.0
+
+
+From 9c19388d5319f694bbc44121b695b0fdf4d3544c Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 02:36:13 +0000
+Subject: [PATCH 08/16] feat(cfet): ban signal routing on M0ICPD power rows
+
+---
+ src/cellgen/archit/CFET/main.py | 55 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 54 insertions(+), 1 deletion(-)
+
+diff --git a/src/cellgen/archit/CFET/main.py b/src/cellgen/archit/CFET/main.py
+index 32f3475..595886e 100644
+--- a/src/cellgen/archit/CFET/main.py
++++ b/src/cellgen/archit/CFET/main.py
+@@ -971,7 +971,7 @@ class CFET:
+ 
+         _ROW_MAP = {
+             2: [0, 1],
+-            3: [0, 2],
++            3: [1, 4],
+             4: [1, 2],
+             5: [1, 3],
+             6: [2, 3],
+@@ -1595,6 +1595,10 @@ class CFET:
+             self.routing_tolerance = -1
+         rt.routing_localization_cfet(self)
+ 
++        # M0ICPD power rows are top-view routing rows, not CFET device tiers.
++        # Power rails are drawn by GDS, so signal routing must not consume them.
++        self._ban_signal_on_power_rows()
++
+         # ^ Linking flow variables to arc usage
+         self.opt.log_comment("Linking flow variables to arc usage ...")
+         self._link_flow_to_arc()
+@@ -1696,6 +1700,55 @@ class CFET:
+                 gathered_edge_vars.append(self.edge_vars[(u_edge, v_edge)])
+         self.opt.Add(sum(gathered_edge_vars) == 0)
+ 
++    def _ban_signal_on_power_rows(self):
++        """For M0ICPD, forbid signal routes on top-view power rows."""
++        if self.c_tech.power_config != "M0ICPD":
++            return
++
++        if not self.power_row_indices:
++            raise ValueError("M0ICPD requires power_row_indices for top-view power rows")
++
++        power_row_indices = sorted(self.power_row_indices.keys())
++        m0_row_count = self.lgg.num_rows_in_layer("M0")
++        invalid_m0_rows = [ri for ri in power_row_indices if not (0 <= ri < m0_row_count)]
++        if invalid_m0_rows:
++            raise ValueError(
++                f"M0ICPD power row indices {invalid_m0_rows} out of range for "
++                f"M0 rows 0..{m0_row_count - 1}"
++            )
++
++        power_row_coords_by_layer = {}
++        for layer_name in ("M0", "PC", "BPC"):
++            row_count = self.lgg.num_rows_in_layer(layer_name)
++            invalid_rows = [ri for ri in power_row_indices if not (0 <= ri < row_count)]
++            if invalid_rows:
++                raise ValueError(
++                    f"M0ICPD power row indices {invalid_rows} out of range for "
++                    f"{layer_name} top-view rows 0..{row_count - 1}; PC/BPC/M0 "
++                    "must share row indices"
++                )
++            layer_idx = self.lgg.layer_index(layer_name)
++            power_row_coords_by_layer[layer_idx] = {
++                self.lgg.row_in_layer(layer_name, ri) for ri in power_row_indices
++            }
++
++        banned_edges = OrderedDict()
++        empty_forbidden_rows = set()
++        for edge, edge_var in self.edge_vars.items():
++            u_edge, v_edge = edge
++            u_forbidden_rows = power_row_coords_by_layer.get(u_edge[0], empty_forbidden_rows)
++            v_forbidden_rows = power_row_coords_by_layer.get(v_edge[0], empty_forbidden_rows)
++            if u_edge[1] in u_forbidden_rows or v_edge[1] in v_forbidden_rows:
++                banned_edges[edge] = edge_var
++
++        logger.info(
++            f"\t==\t[M0ICPD] Banning signal routing on top-view power rows "
++            f"{power_row_indices}: {len(banned_edges)} edge(s)"
++        )
++        self.opt.log_comment("Banning signal routing on M0ICPD top-view power rows ...")
++        for edge_var in banned_edges.values():
++            self.opt.Add(edge_var == 0)
++
+     def _prohibit_routing_to_right_cell_boundaries(self):
+         """For each possible cpp value, any column beyond the rightmost S/D column is unusable."""
+         self.opt.log_comment("Prohibiting routing to right cell boundaries ...")
+-- 
+2.43.0
+
+
+From 7a6721b3ee63805678a1da2d5f0ece884dadef8a Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 02:45:20 +0000
+Subject: [PATCH 09/16] feat(cfet): GDS drawing for M0ICPD in-cell power rails
+
+---
+ src/cellgen/postprocess/gds_CFET_SH.py | 39 ++++++++++++++++++++++++--
+ 1 file changed, 37 insertions(+), 2 deletions(-)
+
+diff --git a/src/cellgen/postprocess/gds_CFET_SH.py b/src/cellgen/postprocess/gds_CFET_SH.py
+index 9fe7ee6..241ee53 100644
+--- a/src/cellgen/postprocess/gds_CFET_SH.py
++++ b/src/cellgen/postprocess/gds_CFET_SH.py
+@@ -148,7 +148,10 @@ class CFETLayout:
+         self.nmos_transistor_data.sort(key=lambda x: x.x)
+ 
+         self.width = self.tech_data.cp_pitch * (self.tech_data.col)
+-        self.height = self.tech_data.m0_pitch * (self.tech_data.track + 2)
++        if self.tech_data.power_config == "M0ICPD":
++            self.height = self.tech_data.m0_pitch * self.tech_data.track
++        else:
++            self.height = self.tech_data.m0_pitch * (self.tech_data.track + 2)
+         # add these to tech_data
+         self.fin_y_offset = 21
+         self.fin_pitch = 18
+@@ -493,6 +496,8 @@ class CFETLayout:
+             self.__m0_bpr__()
+             self.__ca_on_m0_bpr__()
+             self.__lig_on_m0_bpr__()
++        elif self.tech_data.power_config == "M0ICPD":
++            self.__m0_icpd__()
+         else:
+             raise ValueError(f"Power rail configuration {self.tech_data.power_config} not supported.")
+ 
+@@ -746,7 +751,7 @@ class CFETLayout:
+         self.cell.shapes(self.gate_cut_layer_idx).insert(box)
+         # upper power rail
+         lx_2 = 0
+-        ly_2 = ly_1 + self.tech_data.m0_pitch * (self.tech_data.track + 2)
++        ly_2 = ly_1 + self.height
+         ux_2 = ux_1
+         uy_2 = ly_2 + self.gate_cut_height
+         box = Box(lx_2, ly_2, ux_2, uy_2).pyabox_obj()
+@@ -926,6 +931,36 @@ class CFETLayout:
+         vss_text = TextShape("VDD", cx, cy).pyatext_obj()
+         self.cell.shapes(self.M0_text_layer_idx).insert(vss_text)
+ 
++    def __m0_icpd__(self):
++        """
++        Draw in-cell M0 power rails within the bottom/top half-track bands.
++        """
++        rail_thickness = min(self.tech_data.m0_power_rail_thickness, self.tech_data.m0_pitch / 2)
++        half_track = self.tech_data.m0_pitch / 2
++        rail_width = self.tech_data.cp_pitch * self.tech_data.col
++
++        # VSS occupies the bottom 0.5T band.
++        lx_1 = 0
++        ly_1 = (half_track - rail_thickness) / 2
++        ux_1 = rail_width
++        uy_1 = ly_1 + rail_thickness
++        box = Box(lx_1, ly_1, ux_1, uy_1).pyabox_obj()
++        self.cell.shapes(self.M0_layer_idx).insert(box)
++        cx, cy = (lx_1 + ux_1) / 2, (ly_1 + uy_1) / 2
++        vss_text = TextShape("VSS", cx, cy).pyatext_obj()
++        self.cell.shapes(self.M0_text_layer_idx).insert(vss_text)
++
++        # VDD occupies the top 0.5T band.
++        lx_2 = 0
++        ly_2 = self.height - half_track + (half_track - rail_thickness) / 2
++        ux_2 = rail_width
++        uy_2 = ly_2 + rail_thickness
++        box = Box(lx_2, ly_2, ux_2, uy_2).pyabox_obj()
++        self.cell.shapes(self.M0_layer_idx).insert(box)
++        cx, cy = (lx_2 + ux_2) / 2, (ly_2 + uy_2) / 2
++        vdd_text = TextShape("VDD", cx, cy).pyatext_obj()
++        self.cell.shapes(self.M0_text_layer_idx).insert(vdd_text)
++
+     def __lig_on_m0_bpr__(self):
+         # bottom lig on power rail
+         lx_1 = 0
+-- 
+2.43.0
+
+
+From 4a859f86e11418ad4801c8f3bed7cbad3d104bac Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 02:53:29 +0000
+Subject: [PATCH 10/16] fix(cfet): align M0ICPD GDS height with fine rows
+
+---
+ src/cellgen/postprocess/gds_CFET_SH.py | 41 +++++++++++++++++++++-----
+ 1 file changed, 33 insertions(+), 8 deletions(-)
+
+diff --git a/src/cellgen/postprocess/gds_CFET_SH.py b/src/cellgen/postprocess/gds_CFET_SH.py
+index 241ee53..6de0f26 100644
+--- a/src/cellgen/postprocess/gds_CFET_SH.py
++++ b/src/cellgen/postprocess/gds_CFET_SH.py
+@@ -149,7 +149,7 @@ class CFETLayout:
+ 
+         self.width = self.tech_data.cp_pitch * (self.tech_data.col)
+         if self.tech_data.power_config == "M0ICPD":
+-            self.height = self.tech_data.m0_pitch * self.tech_data.track
++            self.height = self.tech_data.m0_pitch * self.tech_data.track * 2
+         else:
+             self.height = self.tech_data.m0_pitch * (self.tech_data.track + 2)
+         # add these to tech_data
+@@ -498,6 +498,7 @@ class CFETLayout:
+             self.__lig_on_m0_bpr__()
+         elif self.tech_data.power_config == "M0ICPD":
+             self.__m0_icpd__()
++            self.__lig_on_m0_icpd__()
+         else:
+             raise ValueError(f"Power rail configuration {self.tech_data.power_config} not supported.")
+ 
+@@ -933,15 +934,15 @@ class CFETLayout:
+ 
+     def __m0_icpd__(self):
+         """
+-        Draw in-cell M0 power rails within the bottom/top half-track bands.
++        Draw M0ICPD in-cell power rails on fine-pitch rows; no BPR is drawn.
+         """
+-        rail_thickness = min(self.tech_data.m0_power_rail_thickness, self.tech_data.m0_pitch / 2)
+-        half_track = self.tech_data.m0_pitch / 2
++        band_height = self.tech_data.m0_pitch
++        rail_thickness = min(self.tech_data.m0_power_rail_thickness, self.tech_data.m0_pitch)
+         rail_width = self.tech_data.cp_pitch * self.tech_data.col
+ 
+-        # VSS occupies the bottom 0.5T band.
++        # VSS is centered in the bottom fine row [0, M0P].
+         lx_1 = 0
+-        ly_1 = (half_track - rail_thickness) / 2
++        ly_1 = (band_height - rail_thickness) / 2
+         ux_1 = rail_width
+         uy_1 = ly_1 + rail_thickness
+         box = Box(lx_1, ly_1, ux_1, uy_1).pyabox_obj()
+@@ -950,9 +951,9 @@ class CFETLayout:
+         vss_text = TextShape("VSS", cx, cy).pyatext_obj()
+         self.cell.shapes(self.M0_text_layer_idx).insert(vss_text)
+ 
+-        # VDD occupies the top 0.5T band.
++        # VDD is centered in the top fine row [height - M0P, height].
+         lx_2 = 0
+-        ly_2 = self.height - half_track + (half_track - rail_thickness) / 2
++        ly_2 = self.height - band_height + (band_height - rail_thickness) / 2
+         ux_2 = rail_width
+         uy_2 = ly_2 + rail_thickness
+         box = Box(lx_2, ly_2, ux_2, uy_2).pyabox_obj()
+@@ -961,6 +962,30 @@ class CFETLayout:
+         vdd_text = TextShape("VDD", cx, cy).pyatext_obj()
+         self.cell.shapes(self.M0_text_layer_idx).insert(vdd_text)
+ 
++    def __lig_on_m0_icpd__(self):
++        """
++        Draw LIG strips centered on M0ICPD fine-row power bands; no CA contacts.
++        """
++        band_height = self.tech_data.m0_pitch
++        lig_thickness = min(self.lig_height, self.tech_data.m0_pitch)
++        lig_width = self.tech_data.cp_pitch * self.tech_data.col
++
++        # Bottom LIG strip stays within the VSS fine row [0, M0P].
++        lx_1 = 0
++        ly_1 = (band_height - lig_thickness) / 2
++        ux_1 = lig_width
++        uy_1 = ly_1 + lig_thickness
++        box = Box(lx_1, ly_1, ux_1, uy_1).pyabox_obj()
++        self.cell.shapes(self.lig_layer_idx).insert(box)
++
++        # Top LIG strip stays within the VDD fine row [height - M0P, height].
++        lx_2 = 0
++        ly_2 = self.height - band_height + (band_height - lig_thickness) / 2
++        ux_2 = lig_width
++        uy_2 = ly_2 + lig_thickness
++        box = Box(lx_2, ly_2, ux_2, uy_2).pyabox_obj()
++        self.cell.shapes(self.lig_layer_idx).insert(box)
++
+     def __lig_on_m0_bpr__(self):
+         # bottom lig on power rail
+         lx_1 = 0
+-- 
+2.43.0
+
+
+From 133e4f5ab1a06e318ce82f79b7446c3336a11a69 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 02:57:39 +0000
+Subject: [PATCH 11/16] docs: document CFET 3T M0ICPD preset
+
+---
+ README.md             | 18 ++++++++++++++----
+ doc/SMTCell2_GUIDE.md | 18 ++++++++++++++----
+ 2 files changed, 28 insertions(+), 8 deletions(-)
+
+diff --git a/README.md b/README.md
+index 7a1ae64..39c3428 100755
+--- a/README.md
++++ b/README.md
+@@ -59,8 +59,8 @@ SMTCell 2.0 offers a wide range of customization options across FinFET, CFET, an
+ 
+ | Feature | FinFET | CFET | QFET |
+ |---|:---:|:---:|:---:|
+-| Supported RT | 4 | 4 | 4 |
+-| Power Rail Style | In-bound (M0BPR) | In-bound (M0BPR) | In-bound (M0BPR) |
++| Supported RT | 4 | 3, 4 | 4 |
++| Power Rail Style | In-bound (M0BPR) | In-bound M0ICPD (3T), M0BPR (4T) | In-bound (M0BPR) |
+ | Height Options | SH | SH | SH |
+ | Gear Ratio | ✅ | ✅ | ✅ |
+ | Offset | ✅ | ✅ | ✅ |
+@@ -175,7 +175,7 @@ For debugging glitches, unwanted metal usage, or heuristic regeneration, run SMT
+ 
+ All major commands run through the **`Makefile`**, which loads a **preset** (`input/presets/<name>.mk`) selected with `CONFIG=`. A preset fixes the technology, height, track count, pitches, and netlist for one flow. List the presets with `make list-configs`; print the resolved settings with `make show-config CONFIG=<preset>`.
+ 
+-Bundled presets: `FinFET_4T_SH`, `CFET_4T_SH`, `QFET_4T_SH`.
++Bundled presets: `FinFET_4T_SH`, `CFET_3T_SH`, `CFET_4T_SH`, `QFET_4T_SH`.
+ 
+ > [!NOTE]
+ > **`QFET` is a placeholder name for 3D FinFET.** Wherever `QFET` appears — the `QFET_*` presets and the `QFET` technology branch — it refers to 3D FinFET, not a separate device technology.
+@@ -186,13 +186,15 @@ Bundled presets: `FinFET_4T_SH`, `CFET_4T_SH`, `QFET_4T_SH`.
+ |---|---|
+ | `TECH` | Technology branch — `FinFET`, `CFET`, or `QFET` (placeholder name for 3D FinFET). |
+ | `HEIGHT_CONFIG` | Cell height — FinFET supports `SH`, `PNNP`, `NPPN`; CFET/QFET support `SH`. |
+-| `TRACK` | Horizontal routing tracks per site — `4`. |
++| `TRACK` | Horizontal top-view M0 routing tracks per site — CFET supports `3` and `4`; FinFET/QFET support `4`. |
+ | `CPP`, `M1P`, `M1OF` | Contacted poly pitch, M1 pitch, and M1 offset in PROBE3. These select the matching `LAYER_FILE` under `input/layer/*.json`. |
+ | `CDL_FILE` | Input netlist searched for the target cell(s). |
+ | `CELL_NAME` | One or more cells to generate. List several by ending each line with `\`. |
+ | `CELL_PREFIX` | Cell/library prefix (default `PROBE3`). |
+ | `FLAG_LOG_CONSTR` | Dump a human-readable constraint log per cell (default `False`). |
+ 
++For `CONFIG=CFET_3T_SH`, `TRACK=3` selects the CFET M0ICPD in-cell power-rail model. The solver/GDS canvas expands this to `TRACK * 2 = 6` fine rows: row 0 is the VSS M0 in-cell power row, rows 1-4 are signal rows, and row 5 is the VDD M0 in-cell power row. PMOS and NMOS pin access both use signal rows `[1, 2, 3, 4]`. PC/BPC are layers, not rows; rows are top-view M0 routing tracks. The 3T M0ICPD preset has no BPR, while the 4T CFET preset remains M0BPR.
++
+ > [!WARNING]
+ > `FLAG_LOG_CONSTR` is for advanced users only — it can easily generate files larger than 500 MB. Keep it off when not in use.
+ 
+@@ -214,6 +216,14 @@ make spnr   CONFIG=FinFET_4T_SH
+ make gds    CONFIG=FinFET_4T_SH
+ ```
+ 
++For the CFET 3-track M0ICPD preset, use the same flow with `CONFIG=CFET_3T_SH`:
++
++```bash
++make config CONFIG=CFET_3T_SH
++make spnr   CONFIG=CFET_3T_SH
++make gds    CONFIG=CFET_3T_SH
++```
++
+ > [!CAUTION]
+ > `make spnr` overwrites the existing `.res` on a successful run — back up results you want to keep, or generate into a separate output directory. (`make config` keeps an already-generated per-cell config unless you pass `FORCE=1`.)
+ 
+diff --git a/doc/SMTCell2_GUIDE.md b/doc/SMTCell2_GUIDE.md
+index 332424e..2195de5 100644
+--- a/doc/SMTCell2_GUIDE.md
++++ b/doc/SMTCell2_GUIDE.md
+@@ -31,8 +31,8 @@ SMTCell 2.0 offers a wide range of customization options across FinFET, CFET, an
+ 
+ | | FinFET | CFET | QFET |
+ |---|:---:|:---:|:---:|
+-| Supported RT | 4 | 4 | 4 |
+-| Power Rail Style | In-bound (M0BPR) | In-bound (M0BPR) | In-bound (M0BPR) |
++| Supported RT | 4 | 3, 4 | 4 |
++| Power Rail Style | In-bound (M0BPR) | In-bound M0ICPD (3T), M0BPR (4T) | In-bound (M0BPR) |
+ | Height Options | SH, DH | SH | SH |
+ | Gear Ratio | ✓ | ✓ | ✓ |
+ | Offset | ✓ | ✓ | ✓ |
+@@ -158,7 +158,7 @@ make list-configs                       # list available presets
+ make show-config CONFIG=FinFET_4T_SH    # print the resolved configuration
+ ```
+ 
+-Bundled presets include `FinFET_4T_SH`, `CFET_4T_SH`, and `QFET_4T_SH`.
++Bundled presets include `FinFET_4T_SH`, `CFET_3T_SH`, `CFET_4T_SH`, and `QFET_4T_SH`.
+ 
+ ### Working with the Makefile
+ 
+@@ -166,12 +166,20 @@ A preset (`input/presets/<name>.mk`) defines the following variables:
+ 
+ - **TECH** is the technology branch to run — `FinFET`, `CFET`, or `QFET` (a placeholder name for 3D FinFET).
+ - **HEIGHT_CONFIG** is the architecture to run. FinFET supports SH, PNNP, or NPPN, whereas CFET and QFET support SH.
+-- **TRACK** is the number of horizontal routing tracks (in a single site). FinFET, CFET, and QFET support 4.
++- **TRACK** is the number of horizontal top-view M0 routing tracks (in a single site). CFET supports 3 and 4; FinFET and QFET support 4.
+ - **CPP, M1P, M1OF** stand for the contacted poly pitch, M1 pitch, and M1 offset in PROBE3 technology. These parameters select the correct `LAYER_FILE` (`input/layer/*.json`). You cannot change them freely unless a corresponding layer file exists.
+ - **CDL_FILE** is the input netlist. SMTCell searches through this netlist file and grabs the correct cell netlist for input. Be sure that your naming format is consistent.
+ - **CELL_NAME** is a list of cell names to run. These names are searched automatically in your netlist. If you define a long list, end each line with a `\` for Makefile line-continuation.
+ - **CELL_PREFIX** (default `PROBE3`) and **FLAG_LOG_CONSTR** (default `False`) are derived defaults. `FLAG_LOG_CONSTR` outputs a constraint file (under `./output/*/constraint/*.log`) for each cell to help check the encoded constraints. **This is only for advanced users and can easily generate >500 MB files that blow up storage.** Be sure to keep it off when not in use.
+ 
++For `CONFIG=CFET_3T_SH`, `TRACK=3` selects CFET M0ICPD in-cell power routing. Run it with the same Makefile stages:
++
++```bash
++make config CONFIG=CFET_3T_SH
++make spnr   CONFIG=CFET_3T_SH
++make gds    CONFIG=CFET_3T_SH
++```
++
+ For example, to generate the cell `AND2_X1` whose netlist entry is `.SUBCKT PROBE3_AND2_X1 A B VDD VSS Y`, a preset sets `CELL_PREFIX=PROBE3` and `CELL_NAME=AND2_X1`; the library name is assembled automatically from `CELL_PREFIX`, `TECH`, `CHANNEL`, `TRACK`, and the pitch parameters.
+ 
+ ### SMTCell Commands
+@@ -236,6 +244,8 @@ Each primary key leads to a dictionary of layer information. Each layer can eith
+ 
+ SMTCell expects the layers to be defined from the bottom to the top. Between each pair of metal layers, there should be a via layer which connects them. **Please be advised that some critical layers are embedded in the SMTCell functions.** For example, "PC" is a special layer that does not perform any routing rule checking, and "M2" is a special layer that is highly constrained due to pin access rules. It is still possible to change layer names, but the required modification is to update these layer names in SMTCell core functions.
+ 
++For CFET 3T M0ICPD (`CONFIG=CFET_3T_SH`), the GDS and solver fine-row canvas uses `TRACK * 2 = 6` rows. Row 0 is the VSS M0 in-cell power row, rows 1-4 are signal rows, and row 5 is the VDD M0 in-cell power row. PMOS and NMOS pin access both use signal rows `[1, 2, 3, 4]`. PC/BPC are layers, not rows; rows are top-view M0 routing tracks. The 3T M0ICPD preset has no BPR. CFET 4T remains the M0BPR preset.
++
+ ### Cell Configuration File
+ 
+ The cell configuration file is a JSON file that details the cell parameters for the standard-cell canvas. Each entry has a `value` (and sometimes auxiliary fields) plus an `info` string tagged with its class. The classes are: Technology (`[TECH]`), cost (`[COST]`), GDS (`[GDS]`), routing (`[ROUTING]`), pin (`[PIN]`), CP-SAT solver (`[SOLVER]`), speedup (`[SPEEDUP]`), and constraint injection (`[INJECT]`). The default template lives in `src/cellgen/archit/config.py`; the tables below list the current parameters and defaults.
+-- 
+2.43.0
+
+
+From 0db5ca8a01d25701137b3a2c0fd4c5c7e37a3334 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 03:01:15 +0000
+Subject: [PATCH 12/16] docs: clarify CFET 3T support matrix
+
+---
+ README.md             |  6 +++---
+ doc/SMTCell2_GUIDE.md | 10 +++++-----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/README.md b/README.md
+index 39c3428..c1c493d 100755
+--- a/README.md
++++ b/README.md
+@@ -61,7 +61,7 @@ SMTCell 2.0 offers a wide range of customization options across FinFET, CFET, an
+ |---|:---:|:---:|:---:|
+ | Supported RT | 4 | 3, 4 | 4 |
+ | Power Rail Style | In-bound (M0BPR) | In-bound M0ICPD (3T), M0BPR (4T) | In-bound (M0BPR) |
+-| Height Options | SH | SH | SH |
++| Height Options | SH (shipped) | SH (shipped) | SH (shipped) |
+ | Gear Ratio | ✅ | ✅ | ✅ |
+ | Offset | ✅ | ✅ | ✅ |
+ | Min Area Rule | ✅ | ✅ | ✅ |
+@@ -69,7 +69,7 @@ SMTCell 2.0 offers a wide range of customization options across FinFET, CFET, an
+ | Via C2C Separation Rule | ✅ | ✅ | ✅ |
+ | Min Gate Cut Length | ✅ | ✅ | ✅ |
+ | Boundary Condition | ✅ | ✅ | ✅ |
+-| Backside Routing | — | — | ✅ |
++| Backside Routing | — | ✅ | — |
+ | Super Via | ✅ | ✅ | ✅ |
+ | LIG Routing | ✅ | ✅ | ✅ |
+ | LISD Routing | ✅ | ✅ | ✅ |
+@@ -185,7 +185,7 @@ Bundled presets: `FinFET_4T_SH`, `CFET_3T_SH`, `CFET_4T_SH`, `QFET_4T_SH`.
+ | Variable | Description |
+ |---|---|
+ | `TECH` | Technology branch — `FinFET`, `CFET`, or `QFET` (placeholder name for 3D FinFET). |
+-| `HEIGHT_CONFIG` | Cell height — FinFET supports `SH`, `PNNP`, `NPPN`; CFET/QFET support `SH`. |
++| `HEIGHT_CONFIG` | Cell height — shipped FinFET/CFET/QFET presets use `SH`. FinFET `PNNP`/`NPPN` are legacy or preset-specific paths; verify the matching preset and layer file before use. |
+ | `TRACK` | Horizontal top-view M0 routing tracks per site — CFET supports `3` and `4`; FinFET/QFET support `4`. |
+ | `CPP`, `M1P`, `M1OF` | Contacted poly pitch, M1 pitch, and M1 offset in PROBE3. These select the matching `LAYER_FILE` under `input/layer/*.json`. |
+ | `CDL_FILE` | Input netlist searched for the target cell(s). |
+diff --git a/doc/SMTCell2_GUIDE.md b/doc/SMTCell2_GUIDE.md
+index 2195de5..52ba12f 100644
+--- a/doc/SMTCell2_GUIDE.md
++++ b/doc/SMTCell2_GUIDE.md
+@@ -33,7 +33,7 @@ SMTCell 2.0 offers a wide range of customization options across FinFET, CFET, an
+ |---|:---:|:---:|:---:|
+ | Supported RT | 4 | 3, 4 | 4 |
+ | Power Rail Style | In-bound (M0BPR) | In-bound M0ICPD (3T), M0BPR (4T) | In-bound (M0BPR) |
+-| Height Options | SH, DH | SH | SH |
++| Height Options | SH (shipped) | SH (shipped) | SH (shipped) |
+ | Gear Ratio | ✓ | ✓ | ✓ |
+ | Offset | ✓ | ✓ | ✓ |
+ | Min Area Rule | ✓ | ✓ | ✓ |
+@@ -86,7 +86,7 @@ SMTCellUCSD-2.0/
+ ├── Makefile
+ ├── output/
+ │   └── <LIBRARY_NAME>/
+-│       └── <HEIGHT>/               # SH, PNNP, NPPN, ...
++│       └── <HEIGHT>/               # SH, or verified preset-specific heights
+ │           ├── config/             # per-cell *.json
+ │           ├── constraint/         # *.log (only when FLAG_LOG_CONSTR=True)
+ │           ├── gds/                # *.gds
+@@ -119,7 +119,7 @@ SMTCellUCSD-2.0/
+ 
+ **`./input/mis`** contains KLayout-friendly layer-property files. They are annotated with PROBE3 layer names and distinguishable colors. You can load them into KLayout to improve your GDS viewing experience.
+ 
+-**`./output/*`** contains the generated files from SMTCell. They are organized by your defined library name and then by your selected height configuration (i.e., SH, PNNP, NPPN). Inside each output subfolder you may find: `config/` (cell-specific configuration files), `constraint/` (a viewable SMTCell constraint stack for debugging, produced only when `FLAG_LOG_CONSTR=True`), `gds/` (the generated GDS file), `logs/` (the log file generated during execution, used for reviewing the solving process), `result/` (a result `.res` file holding the solved placement and routing, and a variable `.var` file recording all variable results for debugging), and `view/` (debug `.png` renders).
++**`./output/*`** contains the generated files from SMTCell. They are organized by your defined library name and then by your selected height configuration. The shipped presets use SH; legacy or preset-specific FinFET heights such as PNNP/NPPN should be verified with a matching preset and layer file before use. Inside each output subfolder you may find: `config/` (cell-specific configuration files), `constraint/` (a viewable SMTCell constraint stack for debugging, produced only when `FLAG_LOG_CONSTR=True`), `gds/` (the generated GDS file), `logs/` (the log file generated during execution, used for reviewing the solving process), `result/` (a result `.res` file holding the solved placement and routing, and a variable `.var` file recording all variable results for debugging), and `view/` (debug `.png` renders).
+ 
+ **`./src/*`** contains the SMTCell 2.0 codebase, which follows Object-Oriented Programming (OOP) practices. The CLI entry point is `src/main.py` (`python -m src.main`). The bulk of the code lives under `src/cellgen/`, organized by function: `archit/` (per-technology orchestrators for CFET, FinFET, and QFET, plus the default cell-config template in `config.py`), `core/` (constraint modeling), `postprocess/` (GDS generation, LEF, and canvas visualization), and `solver/` (the CP-SAT wrapper). Helper scripts live under `src/utility/`, and the optional desktop GUI under `src/gui/`.
+ 
+@@ -165,7 +165,7 @@ Bundled presets include `FinFET_4T_SH`, `CFET_3T_SH`, `CFET_4T_SH`, and `QFET_4T
+ A preset (`input/presets/<name>.mk`) defines the following variables:
+ 
+ - **TECH** is the technology branch to run — `FinFET`, `CFET`, or `QFET` (a placeholder name for 3D FinFET).
+-- **HEIGHT_CONFIG** is the architecture to run. FinFET supports SH, PNNP, or NPPN, whereas CFET and QFET support SH.
++- **HEIGHT_CONFIG** is the architecture to run. The shipped FinFET, CFET, and QFET presets use SH. FinFET PNNP/NPPN and DH-related advanced options are legacy or preset-specific paths; verify the matching preset and layer file before use.
+ - **TRACK** is the number of horizontal top-view M0 routing tracks (in a single site). CFET supports 3 and 4; FinFET and QFET support 4.
+ - **CPP, M1P, M1OF** stand for the contacted poly pitch, M1 pitch, and M1 offset in PROBE3 technology. These parameters select the correct `LAYER_FILE` (`input/layer/*.json`). You cannot change them freely unless a corresponding layer file exists.
+ - **CDL_FILE** is the input netlist. SMTCell searches through this netlist file and grabs the correct cell netlist for input. Be sure that your naming format is consistent.
+@@ -284,7 +284,7 @@ The cell configuration file is a JSON file that details the cell parameters for
+ 
+ | Parameter | Default | Description |
+ |---|---|---|
+-| `MPO` | `2` | Minimum pin opening at M1 (4T: `2`). Too high a value may yield `INFEASIBLE` or a larger #CPP cell. |
++| `MPO` | `2` | Minimum pin opening at M1; preset-specific, with shipped 4T presets using `2`. Too high a value may yield `INFEASIBLE` or a larger #CPP cell. |
+ | `m0_pin_separation` | `false` | Enforce M0 pin separation across different rows. |
+ | `m0_pin_extension` | `true` (`vacancy_edges: 2`) | Extend M0 pins to vacancy edges. |
+ 
+-- 
+2.43.0
+
+
+From 4c4ce7a6e239559ccfb5a84bbc8f6192bea29ee7 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 03:04:59 +0000
+Subject: [PATCH 13/16] docs: clean up SMTCell guide consistency
+
+---
+ README.md             | 4 ++--
+ doc/SMTCell2_GUIDE.md | 6 +++---
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/README.md b/README.md
+index c1c493d..9f4c6c5 100755
+--- a/README.md
++++ b/README.md
+@@ -5,7 +5,7 @@
+ <h1 align="center">SMTCell 2.0</h1>
+ 
+ <p align="center">
+-    <em>A constraint-programming platform for standard-cell layout generation in advanced FinFET and CFET technologies.</em>
++    <em>A constraint-programming platform for standard-cell layout generation across FinFET, CFET, and QFET branches.</em>
+ </p>
+ 
+ <p align="center">
+@@ -282,7 +282,7 @@ If you use **SMTCell 2.0** in your research, please cite the paper (and, optiona
+ 
+ @misc{smtcell2,
+   title        = {{SMTCell 2.0}},
+-  author       = {Cheng, Chung-Kuan and Wang, Yucheng,
++  author       = {Cheng, Chung-Kuan and Wang, Yucheng},
+   year         = {2026},
+   howpublished = {\url{https://github.com/ckchengucsd/SMTCellUCSD-2.0}}
+ }
+diff --git a/doc/SMTCell2_GUIDE.md b/doc/SMTCell2_GUIDE.md
+index 52ba12f..cbd9f72 100644
+--- a/doc/SMTCell2_GUIDE.md
++++ b/doc/SMTCell2_GUIDE.md
+@@ -21,9 +21,9 @@ _Author: Yucheng Wang_
+ 
+ ## SMTCell Overview
+ 
+-SMTCell 2.0 is a cell layout generation platform developed by the VLSI Lab (Prof. Chung-Kuan Cheng) at the University of California, San Diego, designed for DTCO/STCO exploration. Its primary objective is to facilitate technology exploration for FinFET and CFET architectures through intuitive design rule encoding using Constraint Programming. The platform offers flexible Gear Ratio (GR) customization, enabling full adjustment of metal pitch distances. This document specifically details a specialized version of SMTCell (Ver. 2.0) optimized for PROBE3 technology.
++SMTCell 2.0 is a cell layout generation platform developed by the VLSI Lab (Prof. Chung-Kuan Cheng) at the University of California, San Diego, designed for DTCO/STCO exploration. Its primary objective is to facilitate technology-branch exploration for FinFET, CFET, and QFET through intuitive design rule encoding using Constraint Programming. The platform supports gear-ratio and pitch exploration when a matching layer file exists. This document specifically details a specialized version of SMTCell (Ver. 2.0) optimized for PROBE3 technology.
+ 
+-The toolkit ships three technology branches — **FinFET**, **CFET**, and **QFET** — each selected through a Makefile preset (see [Setup & Run SMTCell](#setup--run-smtcell)). **`QFET` is a placeholder name for 3D FinFET**: wherever `QFET` appears (the presets, the `TECH` value, and `src/cellgen/archit/QFET/`), it refers to the 3D FinFET technology — not a separate device family. The compatibility matrix below documents the FinFET and CFET branches.
++The toolkit ships three technology branches — **FinFET**, **CFET**, and **QFET** — each selected through a Makefile preset (see [Setup & Run SMTCell](#setup--run-smtcell)). **`QFET` is a placeholder name for 3D FinFET**: wherever `QFET` appears (the presets, the `TECH` value, and `src/cellgen/archit/QFET/`), it refers to the 3D FinFET technology — not a separate device family. The compatibility matrix below documents the FinFET, CFET, and QFET branches.
+ 
+ ### Toolkit Compatibility
+ 
+@@ -284,7 +284,7 @@ The cell configuration file is a JSON file that details the cell parameters for
+ 
+ | Parameter | Default | Description |
+ |---|---|---|
+-| `MPO` | `2` | Minimum pin opening at M1; preset-specific, with shipped 4T presets using `2`. Too high a value may yield `INFEASIBLE` or a larger #CPP cell. |
++| `MPO` | `2` | Minimum pin opening at M1; preset-specific, so check the selected preset and generated per-cell config. 3T/4T examples are defined by their generated per-cell configs. Too high a value may yield `INFEASIBLE` or a larger #CPP cell. |
+ | `m0_pin_separation` | `false` | Enforce M0 pin separation across different rows. |
+ | `m0_pin_extension` | `true` (`vacancy_edges: 2`) | Extend M0 pins to vacancy edges. |
+ 
+-- 
+2.43.0
+
+
+From 17278ca77cf36dab618ed0d08417ec3ef9b5caf4 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 03:07:49 +0000
+Subject: [PATCH 14/16] docs: fix README markdown cleanliness
+
+---
+ README.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/README.md b/README.md
+index 9f4c6c5..02a90fa 100755
+--- a/README.md
++++ b/README.md
+@@ -29,7 +29,7 @@
+ 
+ **SMTCell 2.0** is a cell layout generation platform developed by the VLSI Lab (Prof. Chung-Kuan Cheng's group) at the University of California, San Diego, designed for **DTCO** exploration. Its primary objective is to facilitate technology exploration for **FinFET** and **CFET** architectures through intuitive design-rule encoding using **Constraint Programming**.
+ 
+-At its core, SMTCell is constraint-encoding software that lets users interact with a **CP-SAT** solver without building the entire constraint stack from scratch. The platform offers flexible metal layer customization. 
++At its core, SMTCell is constraint-encoding software that lets users interact with a **CP-SAT** solver without building the entire constraint stack from scratch. The platform offers flexible metal layer customization.
+ 
+ > [!NOTE]
+ > For a complete technical description, see the [SMTCell Technical Guide](doc/SMTCell2_GUIDE.md).
+@@ -49,7 +49,6 @@ At its core, SMTCell is constraint-encoding software that lets users interact wi
+ - [Reporting Issues](#reporting-issues)
+ - [How to Cite](#how-to-cite)
+ - [References](#references)
+-- [Acknowledgement](#acknowledgement)
+ 
+ ---
+ 
+-- 
+2.43.0
+
+
+From 2dac4e9ad5c4d1477c95dd67cfaae3d031c38b28 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 03:10:24 +0000
+Subject: [PATCH 15/16] docs: fix README configuration TOC entry
+
+---
+ README.md | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/README.md b/README.md
+index 02a90fa..bd35a45 100755
+--- a/README.md
++++ b/README.md
+@@ -45,7 +45,6 @@ At its core, SMTCell is constraint-encoding software that lets users interact wi
+ - [Workflow](#workflow)
+ - [Running SMTCell](#running-smtcell)
+ - [Graphical Interface](#graphical-interface)
+-- [Configuration](#configuration)
+ - [Reporting Issues](#reporting-issues)
+ - [How to Cite](#how-to-cite)
+ - [References](#references)
+-- 
+2.43.0
+
+
+From 7425cde1e75a56095b254f18d968396c85ef0dbf Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Fri, 26 Jun 2026 03:24:45 +0000
+Subject: [PATCH 16/16] fix(cfet): align M0ICPD GDS row transform
+
+---
+ README.md                              |  2 +-
+ doc/SMTCell2_GUIDE.md                  |  2 +-
+ src/cellgen/archit/CFET/tech.py        | 11 +++----
+ src/cellgen/postprocess/gds_CFET_SH.py | 41 +++++++++++++++++---------
+ 4 files changed, 35 insertions(+), 21 deletions(-)
+
+diff --git a/README.md b/README.md
+index bd35a45..d46b1a0 100755
+--- a/README.md
++++ b/README.md
+@@ -191,7 +191,7 @@ Bundled presets: `FinFET_4T_SH`, `CFET_3T_SH`, `CFET_4T_SH`, `QFET_4T_SH`.
+ | `CELL_PREFIX` | Cell/library prefix (default `PROBE3`). |
+ | `FLAG_LOG_CONSTR` | Dump a human-readable constraint log per cell (default `False`). |
+ 
+-For `CONFIG=CFET_3T_SH`, `TRACK=3` selects the CFET M0ICPD in-cell power-rail model. The solver/GDS canvas expands this to `TRACK * 2 = 6` fine rows: row 0 is the VSS M0 in-cell power row, rows 1-4 are signal rows, and row 5 is the VDD M0 in-cell power row. PMOS and NMOS pin access both use signal rows `[1, 2, 3, 4]`. PC/BPC are layers, not rows; rows are top-view M0 routing tracks. The 3T M0ICPD preset has no BPR, while the 4T CFET preset remains M0BPR.
++For `CONFIG=CFET_3T_SH`, `TRACK=3` selects the CFET M0ICPD in-cell power-rail model. CFET SH supports only 3 or 4 routing tracks. The solver/GDS canvas expands the 3T preset to `TRACK * 2 = 6` fine rows: row 0 is the VSS M0 in-cell power row, rows 1-4 are signal rows, and row 5 is the VDD M0 in-cell power row. PMOS and NMOS pin access both use signal rows `[1, 2, 3, 4]`. PC/BPC are layers, not rows; rows are top-view M0 routing tracks. The 3T M0ICPD preset has no BPR, while the 4T CFET preset remains M0BPR.
+ 
+ > [!WARNING]
+ > `FLAG_LOG_CONSTR` is for advanced users only — it can easily generate files larger than 500 MB. Keep it off when not in use.
+diff --git a/doc/SMTCell2_GUIDE.md b/doc/SMTCell2_GUIDE.md
+index cbd9f72..732f84d 100644
+--- a/doc/SMTCell2_GUIDE.md
++++ b/doc/SMTCell2_GUIDE.md
+@@ -244,7 +244,7 @@ Each primary key leads to a dictionary of layer information. Each layer can eith
+ 
+ SMTCell expects the layers to be defined from the bottom to the top. Between each pair of metal layers, there should be a via layer which connects them. **Please be advised that some critical layers are embedded in the SMTCell functions.** For example, "PC" is a special layer that does not perform any routing rule checking, and "M2" is a special layer that is highly constrained due to pin access rules. It is still possible to change layer names, but the required modification is to update these layer names in SMTCell core functions.
+ 
+-For CFET 3T M0ICPD (`CONFIG=CFET_3T_SH`), the GDS and solver fine-row canvas uses `TRACK * 2 = 6` rows. Row 0 is the VSS M0 in-cell power row, rows 1-4 are signal rows, and row 5 is the VDD M0 in-cell power row. PMOS and NMOS pin access both use signal rows `[1, 2, 3, 4]`. PC/BPC are layers, not rows; rows are top-view M0 routing tracks. The 3T M0ICPD preset has no BPR. CFET 4T remains the M0BPR preset.
++For CFET 3T M0ICPD (`CONFIG=CFET_3T_SH`), CFET SH supports only 3 or 4 routing tracks. The GDS and solver fine-row canvas uses `TRACK * 2 = 6` rows. Row 0 is the VSS M0 in-cell power row, rows 1-4 are signal rows, and row 5 is the VDD M0 in-cell power row. PMOS and NMOS pin access both use signal rows `[1, 2, 3, 4]`. PC/BPC are layers, not rows; rows are top-view M0 routing tracks. The 3T M0ICPD preset has no BPR. CFET 4T remains the M0BPR preset.
+ 
+ ### Cell Configuration File
+ 
+diff --git a/src/cellgen/archit/CFET/tech.py b/src/cellgen/archit/CFET/tech.py
+index ef28ee0..81f7501 100644
+--- a/src/cellgen/archit/CFET/tech.py
++++ b/src/cellgen/archit/CFET/tech.py
+@@ -89,11 +89,11 @@ class CFET_Tech:
+         # ------------------------------------------------------------------ #
+         if self.num_rt_track == 3:
+             self.power_config = "M0ICPD"
+-        elif self.num_rt_track in (2, 4):
++        elif self.num_rt_track == 4:
+             self.power_config = "M0BPR"
+         else:
+             raise NotImplementedError(
+-                f"CFET SH power_config undefined for num_rt_track={self.num_rt_track}"
++                f"CFET SH supports 3 or 4 routing tracks (got {self.num_rt_track})"
+             )
+         self.wall_thickness = 0.019
+         self.power_rail_thickness = 0.036
+@@ -220,9 +220,10 @@ class CFET_Tech:
+                 f"Height configuration {height_config!r} not implemented for CFET. "
+                 f"Only 'SH' is currently supported."
+             )
+-        assert num_rt_track in (2, 3, 4), (
+-            f"SH supports 2, 3, or 4 routing tracks (got {num_rt_track})"
+-        )
++        if num_rt_track not in (3, 4):
++            raise NotImplementedError(
++                f"CFET SH supports 3 or 4 routing tracks (got {num_rt_track})"
++            )
+         assert num_sites == 1, (
+             f"SH must have 1 site per standard cell (got {num_sites})"
+         )
+diff --git a/src/cellgen/postprocess/gds_CFET_SH.py b/src/cellgen/postprocess/gds_CFET_SH.py
+index 6de0f26..6991ca5 100644
+--- a/src/cellgen/postprocess/gds_CFET_SH.py
++++ b/src/cellgen/postprocess/gds_CFET_SH.py
+@@ -196,6 +196,14 @@ class CFETLayout:
+         self.m2_x_offset = -7
+         self.m2_h_ovl, self.m2_v_ovl = self._encl.get("M2", (5, 0))
+ 
++        if self.tech_data.power_config == "M0ICPD":
++            self.m0_y_offset = (self.tech_data.m0_pitch - self.tech_data.m0_width) / 2
++            self.ca_y_offset = (self.tech_data.m0_pitch - self.ca_height) / 2
++            self.v0_y_offset = (self.tech_data.m0_pitch - self.v0_height) / 2
++            self.v1_y_offset = (self.tech_data.m0_pitch - self.v1_height) / 2
++            self.m1_y_offset = (self.tech_data.m0_pitch - self.v0_height) / 2
++            self.m2_y_offset = (self.tech_data.m0_pitch - self.tech_data.m2_width) / 2
++
+         self.gds_file = gds_file
+ 
+         # Handle existing GDS file (append mode) - same pattern as FinFET
+@@ -598,14 +606,19 @@ class CFETLayout:
+             else:
+                 raise ValueError(f"Unsupported metal layer combination: {metal.metal_0}, {metal.metal_1}")
+ 
++    def _route_row_to_gds(self, row: float) -> float:
++        if self.tech_data.power_config == "M0ICPD":
++            return row
++        return row / SOLVER_RESCALE
++
+     def __ca__(self, metal: MetalData, debug: bool = False):
+         """
+         Draw the CA layer
+         """
+         lx = metal.col_0 / SOLVER_RESCALE + self.ca_x_offset
+-        ly = metal.row_0 / SOLVER_RESCALE + self.ca_y_offset
++        ly = self._route_row_to_gds(metal.row_0) + self.ca_y_offset
+         ux = metal.col_1 / SOLVER_RESCALE + self.ca_x_offset + self.ca_width
+-        uy = metal.row_1 / SOLVER_RESCALE + self.ca_y_offset + self.ca_height
++        uy = self._route_row_to_gds(metal.row_1) + self.ca_y_offset + self.ca_height
+         box = Box(lx, ly, ux, uy).pyabox_obj()
+         self.cell.shapes(self.CA_layer_idx).insert(box)
+         # CA text layer
+@@ -617,9 +630,9 @@ class CFETLayout:
+         Draw the LIG layer
+         """
+         lx = metal.col_0 / SOLVER_RESCALE + self.ca_x_offset
+-        ly = metal.row_0 / SOLVER_RESCALE + self.ca_y_offset
++        ly = self._route_row_to_gds(metal.row_0) + self.ca_y_offset
+         ux = metal.col_1 / SOLVER_RESCALE + self.ca_x_offset + self.lig_width
+-        uy = metal.row_1 / SOLVER_RESCALE + self.ca_y_offset + self.lig_height
++        uy = self._route_row_to_gds(metal.row_1) + self.ca_y_offset + self.lig_height
+         box = Box(lx, ly, ux, uy).pyabox_obj()
+         # LIG layer
+         self.cell.shapes(self.lig_layer_idx).insert(box)
+@@ -635,9 +648,9 @@ class CFETLayout:
+         Draw the V0 layer
+         """
+         lx = metal.col_0 / SOLVER_RESCALE + self.v0_x_offset
+-        ly = metal.row_0 / SOLVER_RESCALE + self.v0_y_offset
++        ly = self._route_row_to_gds(metal.row_0) + self.v0_y_offset
+         ux = metal.col_1 / SOLVER_RESCALE + self.v0_x_offset + self.v0_width
+-        uy = metal.row_1 / SOLVER_RESCALE + self.v0_y_offset + self.v0_height
++        uy = self._route_row_to_gds(metal.row_1) + self.v0_y_offset + self.v0_height
+         box = Box(lx, ly, ux, uy).pyabox_obj()
+         self.cell.shapes(self.V0_layer_idx).insert(box)
+         # V0 text layer
+@@ -649,9 +662,9 @@ class CFETLayout:
+         Draw the V1 layer
+         """
+         lx = metal.col_0 / SOLVER_RESCALE + self.v1_x_offset
+-        ly = metal.row_0 / SOLVER_RESCALE + self.v1_y_offset
++        ly = self._route_row_to_gds(metal.row_0) + self.v1_y_offset
+         ux = metal.col_1 / SOLVER_RESCALE + self.v1_x_offset + self.v1_width
+-        uy = metal.row_1 / SOLVER_RESCALE + self.v1_y_offset + self.v1_height
++        uy = self._route_row_to_gds(metal.row_1) + self.v1_y_offset + self.v1_height
+         box = Box(lx, ly, ux, uy).pyabox_obj()
+         self.cell.shapes(self.V1_layer_idx).insert(box)
+         # V1 text layer
+@@ -663,9 +676,9 @@ class CFETLayout:
+         Draw the M0 layer
+         """
+         lx = metal.col_0 / SOLVER_RESCALE + self.m0_x_offset - self.m0_h_ovl
+-        ly = metal.row_0 / SOLVER_RESCALE + self.m0_y_offset - self.m0_v_ovl
++        ly = self._route_row_to_gds(metal.row_0) + self.m0_y_offset - self.m0_v_ovl
+         ux = metal.col_1 / SOLVER_RESCALE + self.m0_x_offset + self.ca_width + self.m0_h_ovl  # use lower via to extend
+-        uy = metal.row_1 / SOLVER_RESCALE + self.m0_y_offset + self.tech_data.m0_width + self.m0_v_ovl
++        uy = self._route_row_to_gds(metal.row_1) + self.m0_y_offset + self.tech_data.m0_width + self.m0_v_ovl
+         box = Box(lx, ly, ux, uy).pyabox_obj()
+         self.cell.shapes(self.M0_layer_idx).insert(box)
+         # M0 text layer
+@@ -677,9 +690,9 @@ class CFETLayout:
+         Draw the M1 layer
+         """
+         lx = metal.col_0 / SOLVER_RESCALE + self.m1_x_offset - self.m1_h_ovl
+-        ly = metal.row_0 / SOLVER_RESCALE + self.m1_y_offset - self.m1_v_ovl
++        ly = self._route_row_to_gds(metal.row_0) + self.m1_y_offset - self.m1_v_ovl
+         ux = metal.col_1 / SOLVER_RESCALE + self.m1_x_offset + self.tech_data.m1_width + self.m1_h_ovl
+-        uy = metal.row_1 / SOLVER_RESCALE + self.m1_y_offset + self.v0_height + self.m1_v_ovl  # use lower via to extend
++        uy = self._route_row_to_gds(metal.row_1) + self.m1_y_offset + self.v0_height + self.m1_v_ovl  # use lower via to extend
+         box = Box(lx, ly, ux, uy).pyabox_obj()
+         self.cell.shapes(self.M1_layer_idx).insert(box)
+         # M1 text layer
+@@ -692,9 +705,9 @@ class CFETLayout:
+         Draw the M2 layer
+         """
+         lx = metal.col_0 / SOLVER_RESCALE + self.m2_x_offset - self.m2_h_ovl
+-        ly = metal.row_0 / SOLVER_RESCALE + self.m2_y_offset - self.m2_v_ovl
++        ly = self._route_row_to_gds(metal.row_0) + self.m2_y_offset - self.m2_v_ovl
+         ux = metal.col_1 / SOLVER_RESCALE + self.m2_x_offset + self.v1_width + self.m2_h_ovl  # use lower via to extend
+-        uy = metal.row_1 / SOLVER_RESCALE + self.m2_y_offset + self.tech_data.m2_width + self.m2_v_ovl
++        uy = self._route_row_to_gds(metal.row_1) + self.m2_y_offset + self.tech_data.m2_width + self.m2_v_ovl
+         box = Box(lx, ly, ux, uy).pyabox_obj()
+         self.cell.shapes(self.M2_layer_idx).insert(box)
+         # M2 text layer
+-- 
+2.43.0
+
