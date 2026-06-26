@@ -66,7 +66,8 @@ Stacking (`P_on_N` / `N_on_P`) affects **which power net ties to which device co
 | `M0BPR` | `TRACK=4` (existing) | VDD/VSS drawn **outside** signal tracks (`m0_pitch × (track+2)`) |
 | `M0ICPD` | `TRACK=3` (new) | VDD/VSS on M0 fine rows 0 and 5 **inside** cell height |
 
-`CFET_Tech` selects `M0ICPD` when `num_rt_track == 3` and `height_config == "SH"`.
+`CFET_Tech` supports CFET SH `TRACK` values `3` and `4` only. It selects
+`M0ICPD` for `num_rt_track == 3` and `M0BPR` for `num_rt_track == 4`.
 
 ### 3.2 Layered grid graph (`_init_graph`)
 
@@ -74,16 +75,22 @@ Stacking (`P_on_N` / `N_on_P`) affects **which power net ties to which device co
 |-------|---------------------|
 | M0 | all 6 fine rows |
 | PC | all 6 fine rows |
-| BPC | **signal rows only** `m0_rows[1:5]` (indices 1–4), **not** power rows 0/5 |
+| BPC | all 6 fine rows |
+
+All three layers keep the same layer-local row indices so `row 1..4` has the
+same top-view meaning on PC, BPC, and M0. Power rows 0 and 5 are removed from
+signal usage by routing constraints rather than by deleting rows from BPC.
 
 **Virtual connect** `(BPC, M0)`:
 
 - `M0BPR` / 4T: keep `virtual_connect_method="boundary"` (existing)
-- `M0ICPD` / 3T: use `virtual_connect_method="overlap"` so BPC can reach all shared signal rows (not only first/last)
+- `M0ICPD` / 3T: use `virtual_connect_method="overlap"`; power-row edges are
+  disabled by `_ban_signal_on_power_rows`.
 
 ### 3.3 CP-SAT constraints (new / updated)
 
-1. **`_ban_signal_on_power_rows`** (new): For every non-power net, forbid M0 routing nodes on fine rows 0 and 5.
+1. **`_ban_signal_on_power_rows`** (new): For every non-power net, forbid
+   routing edges touching top-view power rows 0 and 5 on M0/PC/BPC.
 2. **`_ban_other_nets_on_pwr_columns`** (existing): Keep; still restricts VDD/VSS to device power columns on PC/BPC layers.
 3. **SON row map** for `num_rt_track==3`: change from `[0, 2]` to **`[1, 4]`** (signal band edges).
 
@@ -95,8 +102,12 @@ New branch `M0ICPD`:
 
 - Draw VSS M0 strip at fine row 0 (0.5T band)
 - Draw VDD M0 strip at fine row 5 (0.5T band)
-- Draw LIG on those power rows (mirror `__lig_on_m0_bpr__` geometry but aligned to in-cell row coords)
-- Cell **boundary height** = `3 × m0_pitch` (no `track+2` extension)
+- Draw LIG on those power rows, aligned to the in-cell fine-row bands
+- Cell **boundary height** = `3 × m0_pitch × 2` (six fine rows; no external
+  `track+2` rail extension)
+- Use a power-config-aware GDS row transform: M0ICPD route rows use raw
+  fine-row coordinates, while M0BPR keeps the legacy `row / SOLVER_RESCALE`
+  transform.
 - Do **not** draw BPR shapes
 
 ---
@@ -161,6 +172,6 @@ DRC parameters remain PROBE3 defaults for v1 (not CFET_fp EOL=1/VR=0).
 
 | Risk | Mitigation |
 |------|------------|
-| BPC only had power rows in old 3T graph | Give BPC `m0_rows[1:5]` + `overlap` virtual connect |
+| BPC row indices would shift if signal-only rows were kept | Keep all 6 rows on BPC/PC/M0 and ban signal edges on rows 0/5 |
 | AOI infeasible on 3T | Accept for v1 if INV passes; tune cell JSON heuristics later |
-| GDS height mismatch vs solver | Derive boundary from `3 × m0_pitch`, not `track+2` |
+| GDS height mismatch vs solver | Derive boundary from `3 × m0_pitch × 2` and use raw fine-row GDS coordinates for M0ICPD |
