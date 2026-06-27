@@ -43,16 +43,9 @@ class CFFET_Tech(CFET_Tech):
         return "BBOTPC"
 
     # ------------------------------------------------------------------ #
-    # v1 device-tier resolution (front block).                           #
-    #                                                                    #
-    # CFFET v1 places both devices of every gate on the FRONT block, so  #
-    # the inherited CFET column-grid / MIV / long-via machinery operates #
-    # exactly as it does for a single CFET block:                        #
-    #   PMOS -> FTOPPC (top, adjacent to M0 via FTOPCA)                   #
-    #   NMOS -> FBOTPC (bottom, long-via to M0 via FBOTCA; MIV to FTOPPC) #
-    # The back block tiers (BBOTPC / BTOPPC) + BM0 + STV are built into   #
-    # the graph (P2) but carry no placed devices in v1; true dual-face   #
-    # placement (z_var fan-out across faces) is a documented follow-up.  #
+    # Dual-face device tiers (P3b). PMOS/NMOS each may sit on EITHER     #
+    # block's legal tier via ``z_var`` (see CFFET._cffet_model_tier_     #
+    # restriction). Canonical domain grid still uses front FTOPPC.       #
     # ------------------------------------------------------------------ #
     def get_pmos_layer(self) -> str:
         if self.stacking_config == "P_on_N":

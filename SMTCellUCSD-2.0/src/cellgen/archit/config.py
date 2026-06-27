@@ -472,9 +472,8 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
             # config_template["mar_c2c_rule"]["value"]["BM0"] = 40
             # config_template["mar_c2c_rule"]["value"]["M1"] = 0
 
-        # ^ (CFFET Special) Dual-face pin policy schema (see design spec §5.4).
-        # v1 emits the schema for downstream pin assignment; the round-robin
-        # input-face mapping and dual-face output SON are wired incrementally.
+        # ^ (CFFET Special) Dual-face pin policy (P6b). Inputs: one face per
+        # net (round-robin FIN/BIN over CDL order). Outputs: dual SON on M0+BM0.
         if tech == "CFFET":
             config_template["pin_face"] = {
                 "value": {
@@ -487,9 +486,8 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
                     },
                     "output": {"mode": "dual", "faces": ["front", "back"]},
                 },
-                "info": "[PIN][CFFET] Input: one face per net (round-robin in CDL "
-                        "order). Output: both faces (dual SON). v1 keeps the "
-                        "inherited M1 SON model; dual-face SON is a follow-up.",
+                "info": "[PIN][CFFET] Input: single-face SON (round-robin front/back "
+                        "over CDL pin order). Output: dual-face SON on M0 and BM0.",
             }
         # ^ Large Drive Strength Cell (Relative Gap)
         if "_D8" in cir or "_D10" in cir or "_D12" in cir or "_D16" in cir or "_X4" in cir or "_X8" in cir or "_X12" in cir or "_X16" in cir:

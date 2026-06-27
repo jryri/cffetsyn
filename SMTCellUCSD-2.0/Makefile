@@ -201,6 +201,18 @@ viewcell:
 			$(OUT_DIR)/result/$(CELL).res \
 			$(OUT_DIR)/view/$(CELL).png;)
 
+verify_pins:
+ifeq ($(TECH),CFFET)
+	$(foreach CELL,$(CELL_NAME),\
+		$(QUEUE) $(PYTHON) -m src.cellgen.archit.CFFET.pin_audit \
+			--var $(OUT_DIR)/result/$(CELL).var \
+			--res $(OUT_DIR)/result/$(CELL).res \
+			--config $(OUT_DIR)/config/$(CELL).json \
+			--layer $(LAYER_FILE);)
+else
+	@echo "ERROR: 'make verify_pins' wired for TECH=CFFET only (got $(TECH))."; exit 1
+endif
+
 gds_to_gdt:
 	mkdir -p $(OUT_DIR)/gdt
 	$(GDS2GDT) $(OUT_DIR)/gds/$(LIBNAME).gds -o $(OUT_DIR)/gdt/$(LIBNAME).gdt
