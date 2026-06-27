@@ -1302,6 +1302,9 @@ def induce_internal_routing_flow_with_diffusion(instance):
                 instance.opt.Add(sum(k_shareable) == 0).OnlyEnforceIf(is_shared.Not())
             else:
                 instance.opt.Add(is_shared == 0)
+            _ntis = getattr(instance, "net_terminal_is_shared", None)
+            if isinstance(_ntis, dict):
+                _ntis[(net.name, k)] = is_shared
 
             for node in instance.lgg.nodes():
                 in_flows = sum(

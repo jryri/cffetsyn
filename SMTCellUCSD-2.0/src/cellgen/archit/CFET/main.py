@@ -301,6 +301,8 @@ class CFET:
         pc_pitch = self.c_tech.get_pitch(layer_name=self.c_tech.get_domain_placement_layer())
         for t in self._cfg_get("inject_placement", []):
             inject.inject_placement(self, tran_name=t[0], x=int(t[1] / pc_pitch))
+        if not self._cfg_get("enable_routing", True):
+            return
         self._routing_constraints()
 
     def _maybe_inject_clusters(self):
@@ -1627,7 +1629,8 @@ class CFET:
         # ^ Route to I/O pins
         self._induce_external_routing_flow()
         # ^ CFET-specific: cross-device flows must use at least 1 cross-layer arc
-        rt.cfet_cross_device_via_lower_bound(self)
+        if self._cfg_get("cfet_cross_device_via_lb", True):
+            rt.cfet_cross_device_via_lower_bound(self)
         # ^ optional: tighten the HPWL lower bound with mandatory cross-device via cost
         if self._cfg_get("cfet_hpwl_via_tightening", False):
             rt.cfet_hpwl_via_cost_tightening(self)

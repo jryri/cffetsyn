@@ -157,6 +157,71 @@ class CFFET(CFET):
     # P3a — relaxed placement y (signal rows) + per-row x uniqueness     #
     # ================================================================== #
 
+    def _init_state_containers(self):
+        """CFET containers + tier-aware diffusion break slot maps."""
+        super()._init_state_containers()
+        self.db_pmos_vars = {}
+        self.db_nmos_vars = {}
+        self.db_vars = {}
+
+    def _init_diffusion_break_vars(self):
+        """
+        Tier-aware diffusion breaks for dual-face placement.
+
+        CFET's col-only db vars tie breaks to ``x_var`` and ignore ``z_var``,
+        which conflicts with CFFET's per-(tran, ci, zi) slots.  Build per-slot
+        breaks on PMOS / NMOS tiers separately, then aggregate to the legacy
+        ``db_*_cols_vars`` that routing still consumes.
+        """
+        self.opt.log_comment("CFFET diffusion break variables (tier-aware)")
+        pmos_zis = [self.lgg.layer_index(n) for n in self._pmos_tier_names()]
+        nmos_zis = [self.lgg.layer_index(n) for n in self._nmos_tier_names()]
+
+        for ci in self.plc_ci:
+            for zi in pmos_zis:
+                pdb = self.opt.NewBoolVar(f"db_pmos_ci{ci}_zi{zi}")
+                self.db_pmos_vars[(ci, zi)] = pdb
+                at_slot = [
+                    self.placed_tran_at_xzi_vars[(t.name, ci, zi)]
+                    for t in self.circuit.transistors.values()
+                    if t.model == Model.PMOS
+                ]
+                if at_slot:
+                    self.opt.Add(sum(at_slot) == 0).OnlyEnforceIf(pdb)
+                    self.opt.Add(sum(at_slot) >= 1).OnlyEnforceIf(pdb.Not())
+                else:
+                    self.opt.Add(pdb == 1)
+
+            for zi in nmos_zis:
+                ndb = self.opt.NewBoolVar(f"db_nmos_ci{ci}_zi{zi}")
+                self.db_nmos_vars[(ci, zi)] = ndb
+                at_slot = [
+                    self.placed_tran_at_xzi_vars[(t.name, ci, zi)]
+                    for t in self.circuit.transistors.values()
+                    if t.model == Model.NMOS
+                ]
+                if at_slot:
+                    self.opt.Add(sum(at_slot) == 0).OnlyEnforceIf(ndb)
+                    self.opt.Add(sum(at_slot) >= 1).OnlyEnforceIf(ndb.Not())
+                else:
+                    self.opt.Add(ndb == 1)
+
+        for ci in self.plc_ci:
+            for zis, slot_dict, col_dict, tag in (
+                (pmos_zis, self.db_pmos_vars, self.db_pmos_cols_vars, "pmos"),
+                (nmos_zis, self.db_nmos_vars, self.db_nmos_cols_vars, "nmos"),
+            ):
+                agg = self.opt.NewBoolVar(f"db_{tag}_all_tiers_ci{ci}")
+                per_tier = [slot_dict[(ci, zi)] for zi in zis]
+                self.opt.AddBoolAnd(per_tier).OnlyEnforceIf(agg)
+                self.opt.AddBoolOr([v.Not() for v in per_tier]).OnlyEnforceIf(agg.Not())
+                col_dict[ci] = agg
+
+        logger.info(
+            f"\t==\t[CFFET] tier-aware DB vars: "
+            f"PMOS slots={len(self.db_pmos_vars)}, NMOS slots={len(self.db_nmos_vars)}"
+        )
+
     def _init_tech(self):
         """CFET tech + CFFET: allow placement on M0ICPD signal rows (not y=0 only)."""
         super()._init_tech()
@@ -517,46 +582,24 @@ class CFFET(CFET):
         self._cffet_pair_diffusion_alignment()
 
     def _cffet_pair_diffusion_alignment(self):
-        """Build per-tier diffusion-break vars and align the two tiers within
-        each CFFET block (cross-block alignment is NOT required: the blocks
-        have independent diffusions)."""
+        """Align NMOS (bottom) and PMOS (top) diffusion breaks within each block."""
         if not getattr(self.c_tech, "enforce_diffusion_alignment", True):
             return
         self.opt.log_comment("CFFET per-block diffusion alignment (FBOTPC<->FTOPPC, BBOTPC<->BTOPPC) ...")
         logger.info("\t==\t[CFFET] per-block diffusion alignment")
 
-        # Per-tier diffusion break: db_tier[(zi, ci)] iff NO device of that
-        # tier's model is placed at slot (ci, zi).
-        self.db_tier_vars = {}
-        pmos_tier_names = set(self._pmos_tier_names())
-        for tier_name in self.c_tech.get_placement_layers():
-            zi = self.lgg.layer_index(tier_name)
-            model = Model.PMOS if tier_name in pmos_tier_names else Model.NMOS
-            at_slot_by_ci = {
-                ci: [
-                    self.placed_tran_at_xzi_vars[(t.name, ci, zi)]
-                    for t in self.circuit.transistors.values() if t.model == model
-                ]
-                for ci in self.plc_ci
-            }
-            for ci in self.plc_ci:
-                dbv = self.opt.NewBoolVar(f"db_tier_z{zi}_ci{ci}")
-                self.db_tier_vars[(zi, ci)] = dbv
-                at_slot = at_slot_by_ci[ci]
-                if at_slot:
-                    self.opt.Add(sum(at_slot) == 0).OnlyEnforceIf(dbv)
-                    self.opt.Add(sum(at_slot) >= 1).OnlyEnforceIf(dbv.Not())
-                else:
-                    self.opt.Add(dbv == 1)
-
-        # Align bottom<->top tier per block (intra-block MIV pairs are exactly
-        # the (bottom, top) tier pairs of each block).
         for bot_name, top_name in self.c_tech.get_intra_block_miv_pairs():
             bot_zi = self.lgg.layer_index(bot_name)
             top_zi = self.lgg.layer_index(top_name)
             for ci in self.plc_ci:
-                self.opt.AddImplication(self.db_tier_vars[(bot_zi, ci)], self.db_tier_vars[(top_zi, ci)])
-                self.opt.AddImplication(self.db_tier_vars[(top_zi, ci)], self.db_tier_vars[(bot_zi, ci)])
+                ndb = self.db_nmos_vars[(ci, bot_zi)]
+                pdb = self.db_pmos_vars[(ci, top_zi)]
+                self.opt.AddImplication(ndb, pdb)
+                self.opt.AddImplication(pdb, ndb)
+                unified = self.opt.NewBoolVar(f"db_ci{ci}_{bot_name}_{top_name}")
+                self.opt.Add(unified == 1).OnlyEnforceIf([ndb, pdb])
+                self.opt.Add(unified == 0).OnlyEnforceIf([ndb.Not(), pdb.Not()])
+                self.db_vars[(ci, bot_zi)] = unified
 
     def _placement_constraints(self):
         """CFET placement + cross-face (v2) + inter-row (v3) merge vars."""
@@ -607,6 +650,29 @@ class CFFET(CFET):
             "enforce_inter_row_merge", True
         ):
             enforce_inter_row_merge_obligation(self)
+
+    def _prohibit_pc_routing_in_diffusion_break_cols(self):
+        """
+        Optional PC diffusion-break routing ban.
+
+        CFET's col-aggregate ban + single canonical ``pmos_layer`` / ``nmos_layer``
+        is incompatible with CFFET dual-face M0/BM0 routing (breaks MUX2 and
+        similar meshes during presolve).  Tier-aware DB state is still enforced
+        at placement; disable this routing-side ban by default for CFFET.
+        """
+        if not self._cfg_get("enable_pc_db_routing_ban", False):
+            return
+        super()._prohibit_pc_routing_in_diffusion_break_cols()
+
+    def _induce_internal_routing_flow_with_diffusion(self):
+        """
+        Full sharing pool (DS / LISD / gate / cross-face / inter-row) for dual-face
+        CFFET.  CFET's built-in version only allows same-tier diffusion sharing,
+        which conflicts with cross-face merge obligation on complex cells (MUX2).
+        """
+        from src.cellgen.core.routing import induce_internal_routing_flow_with_diffusion
+        self.net_terminal_is_shared = {}
+        induce_internal_routing_flow_with_diffusion(self)
 
     def _only_one_miv_per_col(self):
         """
@@ -699,9 +765,20 @@ class CFFET(CFET):
 
         assignment = {}
         rr = 0
+        assignment_mode = "round_robin"
+        if cfg:
+            assignment_mode = (cfg.get("input", {}) or {}).get("assignment", "round_robin")
+        subckt = self.circuit.subckt_name
+        if assignment_mode == "round_robin" and subckt.startswith(("AOI", "OAI", "MUX")):
+            assignment_mode = "same_face"
+        if assignment_mode == "same_face":
+            explicit = {}
         for net_name in self.circuit.input_net_names():
             if net_name in explicit:
                 face = explicit[net_name]
+            elif assignment_mode == "same_face":
+                face = default_face
+                explicit[net_name] = face
             else:
                 face = faces[rr % len(faces)]
                 rr += 1

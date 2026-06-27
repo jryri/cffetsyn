@@ -505,6 +505,14 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
                 "value": True,
                 "info": "[CFFET v3] Require IRGM|IRMD when a net spans placement y rows.",
             }
+            config_template["enable_pc_db_routing_ban"] = {
+                "value": False,
+                "info": "[CFFET] CFET col-aggregate PC DB routing ban (incompatible with dual-face M0/BM0).",
+            }
+            config_template["cfet_cross_device_via_lb"] = {
+                "value": False,
+                "info": "[CFFET] CFET canonical-layer cross-device via LB (wrong for dual-face z).",
+            }
         # ^ Large Drive Strength Cell (Relative Gap)
         if "_D8" in cir or "_D10" in cir or "_D12" in cir or "_D16" in cir or "_X4" in cir or "_X8" in cir or "_X12" in cir or "_X16" in cir:
             config_template["close_in_low_degree_net"]["value"] = True

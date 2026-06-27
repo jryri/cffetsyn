@@ -102,18 +102,29 @@ def classify_io_nets(io_pins: list[str]) -> tuple[list[str], list[str]]:
     return inputs, outputs
 
 
-def resolve_input_faces(io_pins: list[str], pin_face: dict | None) -> dict[str, str]:
+def resolve_input_faces(
+    io_pins: list[str],
+    pin_face: dict | None,
+    subckt_name: str = "",
+) -> dict[str, str]:
     """Return net -> route metal (M0 / BM0) for each input."""
     face_to_layer = {"front": FRONT_METAL, "back": BACK_METAL}
     explicit: dict[str, str] = {}
     default_face = "front"
+    assignment_mode = "round_robin"
     if pin_face:
         face_to_layer = dict(pin_face.get("face_to_layer", face_to_layer))
         in_cfg = pin_face.get("input", {}) or {}
+        assignment_mode = in_cfg.get("assignment", "round_robin")
         explicit_raw = in_cfg.get("explicit", {}) or {}
         for net, face in explicit_raw.items():
             explicit[net] = face_to_layer.get(face, FRONT_METAL)
         default_face = in_cfg.get("default_face", "front")
+
+    if assignment_mode == "round_robin" and subckt_name.startswith(("AOI", "OAI", "MUX")):
+        assignment_mode = "same_face"
+    if assignment_mode == "same_face":
+        explicit = {}
 
     inputs, _ = classify_io_nets(io_pins)
     assignment: dict[str, str] = {}
@@ -122,6 +133,9 @@ def resolve_input_faces(io_pins: list[str], pin_face: dict | None) -> dict[str, 
     for net in inputs:
         if net in explicit:
             assignment[net] = explicit[net]
+        elif assignment_mode == "same_face":
+            face = default_face
+            assignment[net] = face_to_layer.get(face, FRONT_METAL)
         else:
             face = faces[rr % len(faces)]
             rr += 1
@@ -149,7 +163,8 @@ def audit_cffet_pins(
     pin_face = pin_face_entry.get("value") if isinstance(pin_face_entry, dict) else None
 
     inputs, outputs = classify_io_nets(io_pins)
-    input_faces = resolve_input_faces(io_pins, pin_face)
+    subckt_name = res_path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+    input_faces = resolve_input_faces(io_pins, pin_face, subckt_name=subckt_name)
     sons = parse_active_sons(var_path, idx_to_name)
     by_net: dict[str, list[SonPin]] = {}
     for s in sons:
