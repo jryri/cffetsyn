@@ -9,18 +9,18 @@
 
 ## 1. Purpose
 
-Unify layer, via, row, pin, and power-model naming across specs, JSON layer files, solver code, and GDS. **Convention A** uses **Face suffix** (`_F` / `_B`) on device tiers and explicit `F`/`B` prefixes on metals.
+Unify layer, via, row, pin, and power-model naming across specs, JSON layer files, solver code, and GDS. **Convention A** uses **face-first concatenated symbols**: `{F|B}{BOT|TOP}{PC}` for device tiers, `{F|B}M{level}` for metals.
 
-Do **not** mix with literature numeric tier names (`BPC2`, `PC1`) in the same codebase.
+Do **not** mix with underscore forms (`BPC_F`), literature numeric names (`BPC2`, `PC1`), or legacy short names in new CFFET files.
 
 ---
 
 ## 2. Three Orthogonal Axes
 
 ```
-         Face (F/B)          Device Z (BPC→PC)        Routing row (on FM0/BM0)
+         Face (F/B)          Device Z (BOT→TOP)       Routing row (on FM0/BM0)
               │                      │                         │
-   Front FM0 ─┼─ Back BM0     BPC_* ─┼─ PC_*              r=0 VSS … r=5 VDD
+   Front FM0 ─┼─ Back BM0    FBOTPC─┼─ FTOPPC             r=0 VSS … r=5 VDD
               │                      │                         │
          wafer sides            contact layers            horizontal tracks
 ```
@@ -28,7 +28,7 @@ Do **not** mix with literature numeric tier names (`BPC2`, `PC1`) in the same co
 | Axis | Question it answers | Example |
 |------|---------------------|---------|
 | Face | Which side of the wafer? | `FM0` vs `BM0` |
-| Device Z | Which stacked device tier? | `BPC_F` (bottom) vs `PC_F` (top) |
+| Device Z | Which stacked device tier? | `FBOTPC` (bottom) vs `FTOPPC` (top) |
 | Row | Which horizontal track? | `FM0, r=2` (signal) |
 
 ---
@@ -46,31 +46,44 @@ Do **not** mix with literature numeric tier names (`BPC2`, `PC1`) in the same co
 | `BM1` | Back M1 | V | *(not in main yet)* |
 | `BM2` | Back M2 | H | *(not in main yet)* |
 
+Inter-metal vias: `FV0`, `FV1` (front); `BV0`, `BV1` (back).
+
 ### 3.2 CFET blocks (CFFET = two blocks)
 
 | Block | Face | Bottom tier | Top tier | Primary routing metal |
 |-------|------|-------------|----------|------------------------|
-| Back block | `B` | `BPC_B` | `PC_B` | `BM0` |
-| Front block | `F` | `BPC_F` | `PC_F` | `FM0` |
+| Back block | `B` | `BBOTPC` | `BTOPPC` | `BM0` |
+| Front block | `F` | `FBOTPC` | `FTOPPC` | `FM0` |
 
 Z-order (bottom → top of full CFFET stack):  
-`BPC_B → PC_B → [SV_BF stitch region] → BPC_F → PC_F → FM0` (simplified; exact JSON stack order TBD in CFFET layer file).
+`BBOTPC → BTOPPC → [SVBTF stitch region] → FBOTPC → FTOPPC → FM0` (simplified; exact JSON stack order TBD in CFFET layer file).
 
 ### 3.3 Vias
 
 | Symbol | Connection | Role |
 |--------|------------|------|
-| `CA_F` / `BCA_F` | `PC_F`/`BPC_F` → `FM0` | Front contacts |
-| `CA_B` / `BCA_B` | `PC_B`/`BPC_B` → `BM0` | Back contacts |
-| `V0_F`, `V1_F` | Front inter-metal | Standard vias |
-| `V0_B`, `V1_B` | Back inter-metal | Mirror of front |
-| `MIV_F` | `BPC_F` ↔ `PC_F` | Intra-block cross-tier (CFET `MIV`) |
-| `MIV_B` | `BPC_B` ↔ `PC_B` | Intra-block cross-tier |
-| `SV_BF` | `PC_B` ↔ `BPC_F` | Inter-block vertical stitch |
+| `FTOPCA` / `FBOTCA` | `FTOPPC`/`FBOTPC` → `FM0` | Front contacts |
+| `BTOPCA` / `BBOTCA` | `BTOPPC`/`BBOTPC` → `BM0` | Back contacts |
+| `FV0`, `FV1` | Front inter-metal | Standard vias |
+| `BV0`, `BV1` | Back inter-metal | Mirror of front |
+| `FMIV` | `FBOTPC` ↔ `FTOPPC` | Intra-block cross-tier (CFET `MIV`) |
+| `BMIV` | `BBOTPC` ↔ `BTOPPC` | Intra-block cross-tier |
+| `SVBTF` | `BTOPPC` ↔ `FBOTPC` | Inter-block vertical stitch |
 
-Virtual overlap (solver): `VL_F` (`BPC_F`–`FM0`), `VL_B` (`BPC_B`–`BM0`) when using overlap connect.
+Virtual overlap (solver): `FBOTVL` (`FBOTPC`–`FM0`), `BBOTVL` (`BBOTPC`–`BM0`) when using overlap connect.
 
-### 3.4 Merge types (constraints)
+### 3.4 Deprecated symbols (do not use in new files)
+
+| Deprecated | Use instead |
+|------------|-------------|
+| `BPC_F`, `PC_F`, `BPC_B`, `PC_B` | `FBOTPC`, `FTOPPC`, `BBOTPC`, `BTOPPC` |
+| `CA_F`, `BCA_F`, `CA_B`, `BCA_B` | `FTOPCA`, `FBOTCA`, `BTOPCA`, `BBOTCA` |
+| `V0_F`, `V1_F`, `V0_B`, `V1_B` | `FV0`, `FV1`, `BV0`, `BV1` |
+| `MIV_F`, `MIV_B` | `FMIV`, `BMIV` |
+| `SV_BF` | `SVBTF` |
+| `VL_F`, `VL_B` | `FBOTVL`, `BBOTVL` |
+
+### 3.5 Merge types (constraints)
 
 | Symbol | Condition | Penalty / note |
 |--------|-----------|----------------|
@@ -80,7 +93,7 @@ Virtual overlap (solver): `VL_F` (`BPC_F`–`FM0`), `VL_B` (`BPC_B`–`BM0`) whe
 
 Cross-face signal nets: **at least one** of `{DM, GM}` (or legal `FDM` path) required.
 
-### 3.5 I/O pins
+### 3.6 I/O pins
 
 | Pin | Metal | Policy |
 |-----|-------|--------|
@@ -101,7 +114,7 @@ Cross-face signal nets: **at least one** of `{DM, GM}` (or legal `FDM` path) req
 CFET 3T on main: `M0ICPD` on `FM0` only (`M0` legacy name).  
 CFFET target: `M0ICPD` on **both** `FM0` and `BM0` with identical row semantics.
 
-Signal pin rows (symmetric Option B): `r ∈ {1,2,3,4}` for `TRACK=3`; both `BPC_*` and `PC_*` layers access all signal rows.
+Signal pin rows (symmetric Option B): `r ∈ {1,2,3,4}` for `TRACK=3`; both `FBOTPC`/`FTOPPC` (and back equivalents) access all signal rows.
 
 ---
 
@@ -112,10 +125,10 @@ Use when reading Flip-FET papers; **do not** use numeric names in new SMTCell fi
 | Literature | Convention A |
 |------------|--------------|
 | FM0, BM0 | `FM0`, `BM0` |
-| BPC2, PC1 (back pair) | `BPC_B`, `PC_B` |
-| BPC1, PC2 (front pair) | `BPC_F`, `PC_F` |
-| MIV between pair tiers | `MIV_F` or `MIV_B` |
-| Cross-block stitch | `SV_BF` |
+| BPC2, PC1 (back pair) | `BBOTPC`, `BTOPPC` |
+| BPC1, PC2 (front pair) | `FBOTPC`, `FTOPPC` |
+| MIV between pair tiers | `FMIV` or `BMIV` |
+| Cross-block stitch | `SVBTF` |
 
 Reference: Peng et al., VLSI 2025 — Flip-FET / CFFET architecture (A2 node).
 
@@ -128,7 +141,7 @@ Reference: Peng et al., VLSI 2025 — Flip-FET / CFFET architecture (A2 node).
 - Legacy names in JSON/code: `M0`, `PC`, `BPC`, `CA`, `BCA`
 - Repo layout: `SMTCellUCSD-2.0/` vendored inline (no submodule)
 
-When editing existing CFET files, keep legacy JSON keys unless doing a deliberate rename migration; **new docs and CFFET files** use Convention A.
+When editing existing CFET files, keep legacy JSON keys unless doing a deliberate rename migration; **new docs and CFFET files** use Convention A symbols (`FBOTPC`, `FTOPPC`, …).
 
 ---
 
@@ -136,4 +149,4 @@ When editing existing CFET files, keep legacy JSON keys unless doing a deliberat
 
 - Renaming all existing CFET JSON keys in one shot
 - QFET `H0`/`H1` mid-routing naming (separate technology)
-- Numeric tier suffix scheme (Convention B)
+- Underscore tier forms (`BPC_F`) or numeric tier suffix scheme (Convention B)
