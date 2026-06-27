@@ -513,6 +513,12 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
                 "value": False,
                 "info": "[CFFET] CFET canonical-layer cross-device via LB (wrong for dual-face z).",
             }
+            if "MUX2" in cir or "MUX4" in cir:
+                # MUX2 12T mesh needs wider canvas for dual-face M0/BM0 IO routing
+                # (num_col=23 = insert_num_db 4; default 17 is routing-INFEASIBLE).
+                config_template["insert_num_db"]["value"] = max(
+                    config_template["insert_num_db"]["value"], 4
+                )
         # ^ Large Drive Strength Cell (Relative Gap)
         if "_D8" in cir or "_D10" in cir or "_D12" in cir or "_D16" in cir or "_X4" in cir or "_X8" in cir or "_X12" in cir or "_X16" in cir:
             config_template["close_in_low_degree_net"]["value"] = True
