@@ -1056,6 +1056,30 @@ def _gather_cross_face_shareable_vars(instance, net_name, t1, t2, pin1, pin2):
     return out
 
 
+def _gather_inter_row_shareable_vars(instance, net_name, t1, t2, pin1, pin2):
+    """Inter-row IRGM / IRMD vars for routing flow sharing (CFFET multi-row)."""
+    out = []
+    if pin1 == "gate" and pin2 == "gate":
+        store = getattr(instance, "irgm_pair_vars", {})
+        for key in (
+            f"irgm_{t1}_{t2}_{net_name}",
+            f"irgm_{t2}_{t1}_{net_name}",
+        ):
+            if key in store:
+                out.append(store[key])
+        return out
+    if pin1 == "gate" or pin2 == "gate":
+        return []
+    store = getattr(instance, "irmd_pair_vars", {})
+    for key in (
+        f"irmd_{t1}_{t2}_{net_name}",
+        f"irmd_{t2}_{t1}_{net_name}",
+    ):
+        if key in store:
+            out.append(store[key])
+    return out
+
+
 def _gather_ds_shareable_vars(instance, net_name, t1, t2, pin1, pin2):
     """ds (drain/source) pair vars shareable between t1 and t2 for `net_name`.
 
@@ -1123,6 +1147,8 @@ def _induce_int_flow_conservation(instance, net):
             instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
         k_shareable_vars.extend(_gather_cross_face_shareable_vars(
             instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
+        k_shareable_vars.extend(_gather_inter_row_shareable_vars(
+            instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
         for k_prev in range(k):
             prev_tran, prev_pin = net.terminals()[k_prev]
             k_shareable_vars.extend(_gather_ds_shareable_vars(
@@ -1132,6 +1158,8 @@ def _induce_int_flow_conservation(instance, net):
             k_shareable_vars.extend(_gather_gate_shareable_vars(
                 instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
             k_shareable_vars.extend(_gather_cross_face_shareable_vars(
+                instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
+            k_shareable_vars.extend(_gather_inter_row_shareable_vars(
                 instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
         is_shared = instance.opt.NewBoolVar(f"shared_{net.name}_{k}")
         if k_shareable_vars:
@@ -1253,6 +1281,8 @@ def induce_internal_routing_flow_with_diffusion(instance):
                 instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
             k_shareable.extend(_gather_cross_face_shareable_vars(
                 instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
+            k_shareable.extend(_gather_inter_row_shareable_vars(
+                instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
             for k_prev in range(k):
                 prev_tran, prev_pin = net.terminals()[k_prev]
                 k_shareable.extend(_gather_ds_shareable_vars(
@@ -1262,6 +1292,8 @@ def induce_internal_routing_flow_with_diffusion(instance):
                 k_shareable.extend(_gather_gate_shareable_vars(
                     instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
                 k_shareable.extend(_gather_cross_face_shareable_vars(
+                    instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
+                k_shareable.extend(_gather_inter_row_shareable_vars(
                     instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
 
             is_shared = instance.opt.NewBoolVar(f"shared_{net.name}_{k}")

@@ -52,6 +52,10 @@ from src.cellgen.archit.CFFET.cross_face_merge import (
     pairwise_cross_face_merge,
     enforce_cross_face_merge_obligation,
 )
+from src.cellgen.archit.CFFET.inter_row_merge import (
+    pairwise_inter_row_merge,
+    enforce_inter_row_merge_obligation,
+)
 from src.cellgen.core.entity import Model
 from src.cellgen.core.variable import TransistorVar
 from src.cellgen.core.util import log_variable_info
@@ -168,6 +172,11 @@ class CFFET(CFET):
                 f"\t==\t[CFFET] relaxed placement y rows: {rows} "
                 f"(was CFET single-row [0])"
             )
+
+    def _multi_row_placement_enabled(self) -> bool:
+        if not self._cfg_get("enable_multi_row", True):
+            return False
+        return len(getattr(self, "nmos_placeable_row_indices", [0])) > 1
 
     def _reify_y_eq(self, t1: str, t2: str):
         y1 = self.transistor_vars[t1].y_var
@@ -448,8 +457,10 @@ class CFFET(CFET):
                     bv = self.opt.NewBoolVar(f"{var_prefix}_L{layer_idx}_R{row}_C{col}")
                     getattr(tvar, attr).setdefault(net.name, {}).setdefault(col, []).append(bv)
                     target_dict[(layer_idx, row, col)] = bv
-                    # Pin face -> tier (z) coupling.
+                    # Pin tier (z) and placement row (y) coupling.
                     self.opt.AddImplication(bv, placed_zi)
+                    if self._multi_row_placement_enabled():
+                        self.opt.Add(tvar.y_var == ri).OnlyEnforceIf(bv)
 
     # ----- tier-aware region gathers (union over a model's two faces) ----- #
 
@@ -548,10 +559,12 @@ class CFFET(CFET):
                 self.opt.AddImplication(self.db_tier_vars[(top_zi, ci)], self.db_tier_vars[(bot_zi, ci)])
 
     def _placement_constraints(self):
-        """CFET placement + cross-face GM/DM/FDM variable generation (v2)."""
+        """CFET placement + cross-face (v2) + inter-row (v3) merge vars."""
         super()._placement_constraints()
         if self._cfg_get("enable_cross_face_merge", True):
             pairwise_cross_face_merge(self)
+        if self._multi_row_placement_enabled():
+            pairwise_inter_row_merge(self)
 
     def _build_solve_objectives(self):
         """WSUM objectives + FDM fin-cut penalty (+1 CPP per active FDM)."""
@@ -590,6 +603,10 @@ class CFFET(CFET):
             "enforce_cross_face_merge", True
         ):
             enforce_cross_face_merge_obligation(self)
+        if self._multi_row_placement_enabled() and self._cfg_get(
+            "enforce_inter_row_merge", True
+        ):
+            enforce_inter_row_merge_obligation(self)
 
     def _only_one_miv_per_col(self):
         """

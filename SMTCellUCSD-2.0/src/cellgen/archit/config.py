@@ -497,6 +497,14 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
                 "value": True,
                 "info": "[CFFET v2] Require GM|DM|FDM when a net spans both faces.",
             }
+            config_template["enable_multi_row"] = {
+                "value": True,
+                "info": "[CFFET v3] Allow placement on multiple signal y rows + IRGM/IRMD.",
+            }
+            config_template["enforce_inter_row_merge"] = {
+                "value": True,
+                "info": "[CFFET v3] Require IRGM|IRMD when a net spans placement y rows.",
+            }
         # ^ Large Drive Strength Cell (Relative Gap)
         if "_D8" in cir or "_D10" in cir or "_D12" in cir or "_D16" in cir or "_X4" in cir or "_X8" in cir or "_X12" in cir or "_X16" in cir:
             config_template["close_in_low_degree_net"]["value"] = True
