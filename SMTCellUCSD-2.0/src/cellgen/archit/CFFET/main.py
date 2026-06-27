@@ -53,6 +53,7 @@ from src.cellgen.archit.CFFET.cross_face_merge import (
     enforce_cross_face_merge_obligation,
 )
 from src.cellgen.core.entity import Model
+from src.cellgen.core.variable import TransistorVar
 from src.cellgen.core.util import log_variable_info
 from ortools.sat.python import cp_model
 
@@ -139,6 +140,130 @@ class CFFET(CFET):
         self.all_bpc_row = self.lgg.rows_in_layer(bottom_layer)
         self.all_bpc_col = self.lgg.cols_in_layer(bottom_layer)
 
+        if (
+            self.c_tech.height_config == "SH"
+            and self.c_tech.num_rt_track == 3
+            and len(getattr(self, "nmos_placeable_row_indices", [])) > 1
+        ):
+            rows = self.nmos_placeable_row_indices
+            self.domain_mos_placable_ri = cp_model.Domain.FromValues(rows)
+            logger.info(f"\t==\t[CFFET] y domain: {rows}")
+
+    # ================================================================== #
+    # P3a — relaxed placement y (signal rows) + per-row x uniqueness     #
+    # ================================================================== #
+
+    def _init_tech(self):
+        """CFET tech + CFFET: allow placement on M0ICPD signal rows (not y=0 only)."""
+        super()._init_tech()
+        if (
+            self.c_tech.height_config == "SH"
+            and self.c_tech.num_rt_track == 3
+            and hasattr(self, "signal_row_indices")
+        ):
+            rows = list(self.signal_row_indices)
+            self.nmos_placeable_row_indices = rows
+            self.pmos_placeable_row_indices = rows
+            logger.info(
+                f"\t==\t[CFFET] relaxed placement y rows: {rows} "
+                f"(was CFET single-row [0])"
+            )
+
+    def _reify_y_eq(self, t1: str, t2: str):
+        y1 = self.transistor_vars[t1].y_var
+        y2 = self.transistor_vars[t2].y_var
+        y_eq = self.opt.NewBoolVar(f"y_eq_{t1}_{t2}")
+        self.opt.Add(y1 == y2).OnlyEnforceIf(y_eq)
+        self.opt.Add(y1 != y2).OnlyEnforceIf(y_eq.Not())
+        return y_eq
+
+    def _cffet_init_transistor_placement_vars(self):
+        """CFET transistor x/y/flip + per-row AllDifferent (relaxed y)."""
+        self.opt.log_comment("CFFET transistor variables (relaxed y)")
+        pmos_rows = self.pmos_placeable_row_indices
+        nmos_rows = self.nmos_placeable_row_indices
+        y_domain = cp_model.Domain.FromValues(pmos_rows)
+
+        for tran in self.circuit.transistors.values():
+            tvar = TransistorVar(tran.name)
+            self.transistor_vars[tran.name] = tvar
+            tvar.x_var = self.opt.NewIntVarFromDomain(
+                self.domain_mos_placable_ci, f"{tran.name}_x",
+            )
+            tvar.y_var = self.opt.NewIntVarFromDomain(y_domain, f"{tran.name}_y")
+            tvar.flip_var = self.opt.NewBoolVar(f"{tran.name}_flip")
+            allowed = pmos_rows if tran.model == Model.PMOS else nmos_rows
+            self.opt.AddAllowedAssignments([tvar.y_var], [(r,) for r in allowed])
+
+        # x uniqueness only among same-model devices on the SAME y row.
+        trans = sorted(self.circuit.transistors.values(), key=lambda t: t.name)
+        for i, t1 in enumerate(trans):
+            for t2 in trans[i + 1:]:
+                if t1.model != t2.model:
+                    continue
+                x1 = self.transistor_vars[t1.name].x_var
+                x2 = self.transistor_vars[t2.name].x_var
+                y_eq = self._reify_y_eq(t1.name, t2.name)
+                self.opt.Add(x1 != x2).OnlyEnforceIf(y_eq)
+
+        for tran in self.circuit.transistors.values():
+            tvar = self.transistor_vars[tran.name]
+            for ci in self.plc_ci:
+                placed = self.opt.NewBoolVar(f"tran_placed_col_{tran.name}_{ci}")
+                self.placed_tran_ci_vars[(tran.name, ci)] = placed
+                self.opt.Add(tvar.x_var == ci).OnlyEnforceIf(placed)
+                self.opt.Add(tvar.x_var != ci).OnlyEnforceIf(placed.Not())
+
+        for ci in self.plc_ci:
+            has_tran = self.opt.NewBoolVar(f"has_tran_ci_{ci}")
+            self.has_tran_at_ci_vars[ci] = has_tran
+            all_placed = [
+                self.placed_tran_ci_vars[(t.name, ci)]
+                for t in self.circuit.transistors.values()
+            ]
+            self.opt.AddBoolOr(all_placed).OnlyEnforceIf(has_tran)
+            self.opt.Add(sum(all_placed) == 0).OnlyEnforceIf(has_tran.Not())
+
+    def _init_cpp(self):
+        """CPP cost + lower bound (per-row transistor count when multi-y)."""
+        self.opt.log_comment("Enforcing total cpp...")
+        self.cpp_cost = self.opt.NewIntVarFromDomain(
+            self.domain_sd_ci,
+            "cpp_cost",
+        )
+        self.opt.AddMaxEquality(
+            self.cpp_cost,
+            [self.transistor_vars[t.name].x_var for t in self.circuit.transistors.values()],
+        )
+        num_pmos = self.circuit.num_pmos_transistors()
+        num_nmos = self.circuit.num_nmos_transistors()
+        num_y_rows = max(1, len(self.nmos_placeable_row_indices))
+        per_row = -(-max(num_pmos, num_nmos) // num_y_rows)
+        if per_row > 0:
+            sorted_plc_ci = sorted(self.plc_ci)
+            if per_row <= len(sorted_plc_ci):
+                min_cpp_col = sorted_plc_ci[per_row - 1]
+            else:
+                stride = sorted_plc_ci[1] - sorted_plc_ci[0] if len(sorted_plc_ci) > 1 else 2
+                min_cpp_col = sorted_plc_ci[-1] + stride * (per_row - len(sorted_plc_ci))
+            self.opt.Add(self.cpp_cost >= min_cpp_col)
+            logger.info(
+                f"\t==\t[CFFET] CPP lower bound: cpp_cost >= {min_cpp_col} "
+                f"(per_row={per_row}, y_rows={num_y_rows})"
+            )
+            sorted_plc_ci = sorted(self.plc_ci)
+            for i, tran in enumerate(
+                t for t in self.circuit.transistors.values() if t.model == Model.PMOS
+            ):
+                if i < len(sorted_plc_ci):
+                    self.opt.AddHint(self.transistor_vars[tran.name].x_var, sorted_plc_ci[i])
+            for i, tran in enumerate(
+                t for t in self.circuit.transistors.values() if t.model == Model.NMOS
+            ):
+                if i < len(sorted_plc_ci):
+                    self.opt.AddHint(self.transistor_vars[tran.name].x_var, sorted_plc_ci[i])
+            self.opt.AddHint(self.cpp_cost, min_cpp_col)
+
     # ================================================================== #
     # P3 — z (tier) variable + model->tier restriction                   #
     # ================================================================== #
@@ -163,7 +288,7 @@ class CFFET(CFET):
         # Must be set BEFORE accelerate's / routing's tier-gated constraints
         # are emitted (they run later, in _build_constraints).
         self.uses_tier_placement = True
-        super()._init_transistor_vars()
+        self._cffet_init_transistor_placement_vars()
         self._init_tier_vars()
 
     def _placement_tier_indices(self):
