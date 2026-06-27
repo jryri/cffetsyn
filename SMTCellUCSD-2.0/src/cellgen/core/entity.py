@@ -468,6 +468,59 @@ class Circuit:
                 if not net.name in config.PWR_NET_NAMES + config.GND_NET_NAMES
             ]
 
+    def _is_output_by_pin_order(self, net_name):
+        """Heuristic output detection from subckt pin order.
+
+        For single-output cells (the common case) the LAST IO pin in the
+        ``.SUBCKT`` declaration order is the output. ``io_pins`` preserves the
+        CDL pin order (power/ground stripped), so its tail is the output pin.
+        """
+        if not self.io_pins:
+            return False
+        return net_name == self.io_pins[-1]
+
+    def is_input_net(self, net_name):
+        """True iff ``net_name`` is a primary input pin.
+
+        Resolution order:
+          1. ``config.INPUT_NET_NAMES`` (the curated input-pin collection).
+          2. ``config.OUTPUT_NET_NAMES`` membership rules it out.
+          3. Fallback to subckt pin order: an IO pin that is not the
+             (last-pin) output is treated as an input.
+        """
+        if net_name not in self.io_pins:
+            return False
+        if net_name in config.INPUT_NET_NAMES:
+            return True
+        if net_name in config.OUTPUT_NET_NAMES:
+            return False
+        return not self._is_output_by_pin_order(net_name)
+
+    def is_output_net(self, net_name):
+        """True iff ``net_name`` is a primary output pin.
+
+        Resolution order:
+          1. ``config.OUTPUT_NET_NAMES`` (the curated output-pin collection).
+          2. ``config.INPUT_NET_NAMES`` membership rules it out.
+          3. Fallback to subckt pin order: the last IO pin is the output for
+             single-output cells.
+        """
+        if net_name not in self.io_pins:
+            return False
+        if net_name in config.OUTPUT_NET_NAMES:
+            return True
+        if net_name in config.INPUT_NET_NAMES:
+            return False
+        return self._is_output_by_pin_order(net_name)
+
+    def input_net_names(self):
+        """Primary-input net names in subckt (CDL) pin order."""
+        return [n for n in self.io_pins if self.is_input_net(n)]
+
+    def output_net_names(self):
+        """Primary-output net names in subckt (CDL) pin order."""
+        return [n for n in self.io_pins if self.is_output_net(n)]
+
     def get_power_ground_nets(self):
         return [net for net in self.nets.values() if net.is_power_or_ground_net()]
 

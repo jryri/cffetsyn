@@ -1828,6 +1828,18 @@ def _get_net_reachable_layers_cfet(cfet, net):
         reachable.add(pmos_layer_idx)
     if has_nmos:
         reachable.add(nmos_layer_idx)
+    # CFFET dual-face (uses_tier_placement): a device may land on EITHER face
+    # (P3b) and outputs route to BOTH route metals M0/BM0 (P6b), so a net may
+    # legitimately traverse any placement tier (e.g. the back-block descent
+    # FBOTPC -> STV -> BTOPPC -> BMIV -> BBOTPC -> BM0). Do not prune placement
+    # tiers in that case - keep every tier reachable so the cross-face path is
+    # available. (The per-net pruning is a speedup for single-face CFET only.)
+    if getattr(cfet, "uses_tier_placement", False):
+        for layer_name in placement_layers:
+            try:
+                reachable.add(cfet.lgg.layer_index(layer_name))
+            except KeyError:
+                pass
     return reachable
 
 
