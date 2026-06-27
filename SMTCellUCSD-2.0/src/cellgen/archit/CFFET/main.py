@@ -62,14 +62,7 @@ class CFFET(CFET):
         logger.info("SMTCell CFFET orchestrator (extends CFET, dual-face Flip-FET)")
 
     def _maybe_write_results(self):
-        """Write the .res result + .var dump on success.
-
-        The CFET layer-by-layer PNG visualizer (``visualize_CFET_4T``) only
-        understands the 2-tier CFET stack and raises on CFFET's 4-tier + dual-M0
-        transitions (e.g. FBOTPC->FTOPPC). Dual-face GDS/view is P7; until then
-        the PNG step is attempted but failures are downgraded to a warning so a
-        valid solve is never lost.
-        """
+        """Write the .res result + .var dump + dual-face PNG on success."""
         if not self.solve_status:
             return
         subckt = self.circuit.subckt_name
@@ -81,23 +74,17 @@ class CFFET(CFET):
             filename=res_path,
             lgg=self.lgg,
         )
-        try:
-            from src.cellgen.postprocess.visualize_CFET_4T import (
-                draw_layout_with_pin_and_routing,
-                load_results,
-            )
-            view_dir = os.path.join(self.output_dir, "view")
-            os.makedirs(view_dir, exist_ok=True)
-            placement, routing = load_results(res_path)
-            draw_layout_with_pin_and_routing(
-                placement, routing,
-                filename=os.path.join(view_dir, f"{subckt}.png"),
-            )
-        except Exception as exc:  # noqa: BLE001 - visualization is best-effort (P7)
-            logger.warning(
-                f"[CFFET] dual-face view not yet supported (P7); skipping PNG for "
-                f"{subckt}: {exc}"
-            )
+        from src.cellgen.postprocess.visualize_CFFET_4T import (
+            draw_cffet_layout,
+            load_results,
+        )
+        view_dir = os.path.join(self.output_dir, "view")
+        os.makedirs(view_dir, exist_ok=True)
+        placement, routing, _tech = load_results(res_path)
+        draw_cffet_layout(
+            placement, routing,
+            filename=os.path.join(view_dir, f"{subckt}.png"),
+        )
 
     # ================================================================== #
     # P2 — domain over the front canonical placement tier (FTOPPC)       #
