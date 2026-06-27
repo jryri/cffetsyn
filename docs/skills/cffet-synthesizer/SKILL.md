@@ -97,6 +97,7 @@ python -m src.cellgen.archit.CFFET.pin_audit \
 | `src/cellgen/archit/CFFET/main.py` | Orchestrator: z_var, STV, merge, SON |
 | `src/cellgen/archit/CFFET/tech.py` | 4-tier + dual rail tech queries |
 | `src/cellgen/archit/CFFET/util.py` | `.res` writer (Z column + via tags) |
+| `src/cellgen/archit/CFFET/cross_face_merge.py` | GM/DM/FDM v2 cross-face merge |
 | `src/cellgen/archit/CFFET/pin_audit.py` | Pin policy verification |
 | `src/cellgen/archit/config.py` | `pin_face` template for CFFET |
 | `src/cellgen/postprocess/visualize_CFFET_4T.py` | 4-tier PNG view |
@@ -108,11 +109,24 @@ python -m src.cellgen.archit.CFFET.pin_audit \
 - PMOS → {BTOPPC, FTOPPC}; NMOS → {BBOTPC, FBOTPC} (P_on_N)
 - Pin candidates coupled to `z_var` (pins never straddle the seam)
 
-## Known limits (v1)
+## Known limits (v1 / v2)
 
-- **AOI21_X1** @ 3T: INFEASIBLE (capacity, not timeout)
+- **AOI21_X1 / OAI21_X1** @ 3T: INFEASIBLE — placement/routing capacity; FDM v2 adds cross-face merge paths but **v3 multi-row** still required
+- **MUX2_X2 / NAND2_X2**: presolve `all_diff` — need `CFFET_4T_SH` or v3 multi-row
 - GDS: routing + M0ICPD rails; full LISD/SDT geometry is simplified vs CFET
-- Large cells (DFF, wide AOI): defer until small-cell pin audit passes
+
+## FDM v2 (cross-face merge)
+
+Config flags (in generated per-cell JSON):
+
+| Flag | Default | Meaning |
+|------|---------|---------|
+| `enable_cross_face_merge` | `true` | Create GM/DM/FDM vars |
+| `enforce_cross_face_merge` | `true` | Require GM\|DM\|FDM when net spans faces |
+
+FDM costs **+1 CPP** via `fdm_penalty` objective (weight 1000). Module: `src/cellgen/archit/CFFET/cross_face_merge.py`.
+
+Spec: `docs/superpowers/specs/2026-06-27-cffet-fdm-v2-design.md`
 
 ## Smoke test matrix (2026-06-27 batch, timeout 1000s)
 

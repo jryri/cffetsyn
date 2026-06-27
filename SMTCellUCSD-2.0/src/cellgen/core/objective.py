@@ -100,6 +100,13 @@ class Objective:
         return net_span
 
     @staticmethod
+    def fdm_penalty(finfet):
+        """Minimize field-drain merge count (+1 CPP each in the WSUM table)."""
+        if not getattr(finfet, "fdm_pair_vars", None):
+            return 0
+        return sum(finfet.fdm_pair_vars.values())
+
+    @staticmethod
     def gate_sharing(finfet):
         """
         Objective: Maximize gate sharing.

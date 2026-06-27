@@ -31,9 +31,7 @@ Scope C:
         (FBOTPC<->FTOPPC, BBOTPC<->BTOPPC) mirror the QFET tier machinery.
   - P4  AtMostOne FMIV/BMIV per column; AtMostOne STV per column; dual
         ``_ban_signal_on_power_rows`` (inherited, driven by tech layer queries).
-  - P5  ``_require_cross_face_merge`` classifies cross-face signal nets (those
-        with devices restricted to tiers on both faces) and enforces a
-        gate/drain merge obligation.
+  - P5  Cross-face GM/DM/FDM merge (``cross_face_merge``) + at-least-one obligation.
   - P6/P6b  Dual-face ``pin_face`` policy. Inputs are single-face (round-robin
         FIN/BIN over CDL pin order); outputs are dual-face with a Super-Outer-
         Node required on BOTH route metals (front M0 and back BM0). SONs live
@@ -50,6 +48,10 @@ from loguru import logger
 from src.cellgen.archit.CFET.main import CFET
 from src.cellgen.archit.CFFET.tech import CFFET_Tech
 from src.cellgen.archit.CFFET.util import write_cffet_result
+from src.cellgen.archit.CFFET.cross_face_merge import (
+    pairwise_cross_face_merge,
+    enforce_cross_face_merge_obligation,
+)
 from src.cellgen.core.entity import Model
 from src.cellgen.core.util import log_variable_info
 from ortools.sat.python import cp_model
@@ -420,6 +422,24 @@ class CFFET(CFET):
                 self.opt.AddImplication(self.db_tier_vars[(bot_zi, ci)], self.db_tier_vars[(top_zi, ci)])
                 self.opt.AddImplication(self.db_tier_vars[(top_zi, ci)], self.db_tier_vars[(bot_zi, ci)])
 
+    def _placement_constraints(self):
+        """CFET placement + cross-face GM/DM/FDM variable generation (v2)."""
+        super()._placement_constraints()
+        if self._cfg_get("enable_cross_face_merge", True):
+            pairwise_cross_face_merge(self)
+
+    def _build_solve_objectives(self):
+        """WSUM objectives + FDM fin-cut penalty (+1 CPP per active FDM)."""
+        objectives = super()._build_solve_objectives()
+        overrides = self._cfg_get("objective_weights", {}) or {}
+        fdm_weight = overrides.get("fdm_penalty", 1000)
+        if fdm_weight:
+            from src.cellgen.core.objective import Objective
+            objectives = list(objectives) + [
+                (lambda: Objective.fdm_penalty(self), fdm_weight, "min"),
+            ]
+        return objectives
+
     # ================================================================== #
     # P4 — dual intra-block MIV + inter-block STV column constraints     #
     # ================================================================== #
@@ -441,7 +461,10 @@ class CFFET(CFET):
             self.cell_config["m0_pin_extension"]["value"] = False
         super()._routing_constraints()
         self._only_one_stv_per_col()
-        self._require_cross_face_merge()
+        if self._cfg_get("enable_cross_face_merge", True) and self._cfg_get(
+            "enforce_cross_face_merge", True
+        ):
+            enforce_cross_face_merge_obligation(self)
 
     def _only_one_miv_per_col(self):
         """
@@ -674,72 +697,3 @@ class CFFET(CFET):
         for key, bvs in per_layer_col.items():
             if len(bvs) > 1:
                 self.opt.Add(sum(bvs) <= 1)
-
-    # ================================================================== #
-    # P5 — cross-face merge obligation (gate / drain)                    #
-    # ================================================================== #
-
-    def _front_tier_names(self):
-        return {"FBOTPC", "FTOPPC"}
-
-    def _back_tier_names(self):
-        return {"BBOTPC", "BTOPPC"}
-
-    def _net_touches_face(self, net, face):
-        """
-        Return True if some device connected to ``net`` is RESTRICTED to a tier
-        on ``face`` ('front' | 'back') — i.e. its ``z_var`` tier domain lies
-        entirely within that face.
-
-        This reads the dynamic per-device tier membership rather than the
-        static ``pmos_layer`` / ``nmos_layer`` assumption. Under full dual-face
-        placement every device admits BOTH faces, so no device is pinned and
-        this returns False for both faces (the cross-face merge obligation stays
-        inert, as in the v1 P5 documentation). If a cell ever narrows a device's
-        ``z_var`` to a single face, the obligation activates automatically.
-        """
-        face_layers = self._front_tier_names() if face == "front" else self._back_tier_names()
-        for tran_name, _pin in net.connected_transistors:
-            tran = self.circuit.transistors[tran_name]
-            allowed = set(self._model_tier_names(tran.model))
-            if allowed and allowed.issubset(face_layers):
-                return True
-        return False
-
-    def _require_cross_face_merge(self):
-        """
-        For every cross-face signal net (terminals on both the back AND the
-        front block) require at least one legal cross-face merge: a shared gate
-        column (GM) or a shared drain (col,row) (DM). Connectivity across the
-        face boundary is then carried by the merge or by an STV/MIV chain.
-
-        With unrestricted dual-face placement (every device admits both faces)
-        no net is classified cross-face, so this adds no constraints; it
-        activates automatically for any cell that narrows a device's ``z_var``
-        to a single face.
-        """
-        self.opt.log_comment("Enforcing cross-face merge obligation ...")
-        cross_face_nets = [
-            net for net in self.circuit.get_nets(with_power_ground=False)
-            if self._net_touches_face(net, "front") and self._net_touches_face(net, "back")
-        ]
-        if not cross_face_nets:
-            logger.info("\t==\t[CFFET] No cross-face signal nets (single-face v1 placement)")
-            return
-        logger.info(
-            f"\t==\t[CFFET] {len(cross_face_nets)} cross-face net(s) require GM/DM merge"
-        )
-        # Gate-merge: a cross-face net whose gate terminals share a column is
-        # satisfied via the shared poly column. Drain-merge: shared (col,row).
-        # Both are expressed through the existing pairwise gate/diffusion share
-        # selectors, so require at least one of the net's share vars active.
-        for net in cross_face_nets:
-            share_vars = []
-            for key, var in getattr(self, "gate_share_pair_vars", {}).items():
-                if key.endswith(f"_{net.name}"):
-                    share_vars.append(var)
-            for key, var in getattr(self, "ds_pair_vars", {}).items():
-                if key.endswith(f"_{net.name}"):
-                    share_vars.append(var)
-            if share_vars:
-                self.opt.AddBoolOr(share_vars)
