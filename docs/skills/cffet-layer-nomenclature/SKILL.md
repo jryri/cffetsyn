@@ -33,7 +33,7 @@ Device tier:  {F|B}{BOT|TOP}{PC}
 Metal:        {F|B}M{level}          e.g. FM0, BM1
 Contact via:  {F|B}{BOT|TOP}CA        e.g. FTOPCA, FBOTCA
 Inter-tier:   {F|B}MIV
-Stitch via:   SVBTF                   BTOPPC ↔ FBOTPC
+Stitch via:   STV                     sole inter-block stitch (unique)
 ```
 
 ### Metal routing layers
@@ -64,7 +64,9 @@ Stitch via:   SVBTF                   BTOPPC ↔ FBOTPC
 | `BV0`, `BV1` | `BM0↔BM1`, `BM1↔BM2` | ~~`V0_B`, `V1_B`~~ |
 | `FMIV` | `FBOTPC` ↔ `FTOPPC` | ~~`MIV_F`~~ |
 | `BMIV` | `BBOTPC` ↔ `BTOPPC` | ~~`MIV_B`~~ |
-| `SVBTF` | `BTOPPC` ↔ `FBOTPC` | ~~`SV_BF`~~ |
+| `STV` | inter-block stitch (`BTOPPC` ↔ `FBOTPC`) | ~~`SV_BF`, `SVBTF`~~ |
+
+`STV` is the **only** inter-block stitch via in CFFET — no face/tier prefix needed.
 
 Virtual overlap (solver): `FBOTVL` (`FBOTPC`–`FM0`), `BBOTVL` (`BBOTPC`–`BM0`).
 
@@ -108,7 +110,7 @@ Before merging layer/spec changes:
 1. Device tiers use `FBOTPC`/`FTOPPC`/`BBOTPC`/`BTOPPC` — never `BPC_F` or `PC_B`.
 2. Docs distinguish **layer** (`FTOPPC`) vs **row** (`FM0, r=2`).
 3. No bare `M0` in CFFET specs (use `FM0` or state "legacy alias").
-4. Cross-face nets name merge type (`DM`/`GM`/`FDM`) and stitch (`SVBTF`).
+4. Cross-face nets name merge type (`DM`/`GM`/`FDM`) and stitch via (`STV`).
 5. Pin side rules reference `FIN`/`BIN`/`FOUT`/`BOUT`, not "M0 pin" alone.
 
 ## Common Mistakes

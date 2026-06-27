@@ -56,7 +56,7 @@ Inter-metal vias: `FV0`, `FV1` (front); `BV0`, `BV1` (back).
 | Front block | `F` | `FBOTPC` | `FTOPPC` | `FM0` |
 
 Z-order (bottom → top of full CFFET stack):  
-`BBOTPC → BTOPPC → [SVBTF stitch region] → FBOTPC → FTOPPC → FM0` (simplified; exact JSON stack order TBD in CFFET layer file).
+`BBOTPC → BTOPPC → [STV] → FBOTPC → FTOPPC → FM0` (simplified; exact JSON stack order TBD in CFFET layer file).
 
 ### 3.3 Vias
 
@@ -68,7 +68,7 @@ Z-order (bottom → top of full CFFET stack):
 | `BV0`, `BV1` | Back inter-metal | Mirror of front |
 | `FMIV` | `FBOTPC` ↔ `FTOPPC` | Intra-block cross-tier (CFET `MIV`) |
 | `BMIV` | `BBOTPC` ↔ `BTOPPC` | Intra-block cross-tier |
-| `SVBTF` | `BTOPPC` ↔ `FBOTPC` | Inter-block vertical stitch |
+| `STV` | `BTOPPC` ↔ `FBOTPC` | Sole inter-block stitch via (no F/B/TOP/BOT in name) |
 
 Virtual overlap (solver): `FBOTVL` (`FBOTPC`–`FM0`), `BBOTVL` (`BBOTPC`–`BM0`) when using overlap connect.
 
@@ -80,7 +80,7 @@ Virtual overlap (solver): `FBOTVL` (`FBOTPC`–`FM0`), `BBOTVL` (`BBOTPC`–`BM0
 | `CA_F`, `BCA_F`, `CA_B`, `BCA_B` | `FTOPCA`, `FBOTCA`, `BTOPCA`, `BBOTCA` |
 | `V0_F`, `V1_F`, `V0_B`, `V1_B` | `FV0`, `FV1`, `BV0`, `BV1` |
 | `MIV_F`, `MIV_B` | `FMIV`, `BMIV` |
-| `SV_BF` | `SVBTF` |
+| `SV_BF`, `SVBTF`, `BTOPFBOTSV` | `STV` |
 | `VL_F`, `VL_B` | `FBOTVL`, `BBOTVL` |
 
 ### 3.5 Merge types (constraints)
@@ -128,7 +128,7 @@ Use when reading Flip-FET papers; **do not** use numeric names in new SMTCell fi
 | BPC2, PC1 (back pair) | `BBOTPC`, `BTOPPC` |
 | BPC1, PC2 (front pair) | `FBOTPC`, `FTOPPC` |
 | MIV between pair tiers | `FMIV` or `BMIV` |
-| Cross-block stitch | `SVBTF` |
+| Cross-block stitch | `STV` |
 
 Reference: Peng et al., VLSI 2025 — Flip-FET / CFFET architecture (A2 node).
 
