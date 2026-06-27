@@ -156,6 +156,13 @@ else ifeq ($(TECH),CFET)
 			--subckt_name $(CELL) \
 			--layer       $(LAYER_FILE) \
 			--gds_file    $(OUT_DIR)/gds/$(LIBNAME).gds;)
+else ifeq ($(TECH),CFFET)
+	$(foreach CELL,$(CELL_NAME),\
+		$(QUEUE) $(PYTHON) -m src.cellgen.postprocess.gds_CFFET_SH \
+			--result_file $(OUT_DIR)/result/$(CELL).res \
+			--subckt_name $(CELL) \
+			--layer       $(LAYER_FILE) \
+			--gds_file    $(OUT_DIR)/gds/$(LIBNAME).gds;)
 else ifeq ($(TECH),FinFET)
 	$(foreach CELL,$(CELL_NAME),\
 		$(QUEUE) $(PYTHON) -m src.cellgen.postprocess.gds_FinFET_SH \
@@ -164,7 +171,7 @@ else ifeq ($(TECH),FinFET)
 			--layer       $(LAYER_FILE) \
 			--gds_file    $(OUT_DIR)/gds/$(LIBNAME).gds;)
 else
-	@echo "ERROR: 'make gds' not wired for TECH=$(TECH). Expected QFET|CFET|FinFET."; exit 1
+	@echo "ERROR: 'make gds' not wired for TECH=$(TECH). Expected QFET|CFET|CFFET|FinFET."; exit 1
 endif
 
 lef:
@@ -193,6 +200,18 @@ viewcell:
 		$(QUEUE) $(PYTHON) -m src.cellgen.postprocess.visualize_$(TECH)_4T \
 			$(OUT_DIR)/result/$(CELL).res \
 			$(OUT_DIR)/view/$(CELL).png;)
+
+verify_pins:
+ifeq ($(TECH),CFFET)
+	$(foreach CELL,$(CELL_NAME),\
+		$(QUEUE) $(PYTHON) -m src.cellgen.archit.CFFET.pin_audit \
+			--var $(OUT_DIR)/result/$(CELL).var \
+			--res $(OUT_DIR)/result/$(CELL).res \
+			--config $(OUT_DIR)/config/$(CELL).json \
+			--layer $(LAYER_FILE);)
+else
+	@echo "ERROR: 'make verify_pins' wired for TECH=CFFET only (got $(TECH))."; exit 1
+endif
 
 gds_to_gdt:
 	mkdir -p $(OUT_DIR)/gdt

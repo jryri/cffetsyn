@@ -357,8 +357,8 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
             "info": "[SPEEDUP] Limit each net to one M2 track and each M2 track to one net"
         }
     }
-    # ^ (GLOBAL) CFET uses LIG/LISD for routing
-    if tech == "CFET":
+    # ^ (GLOBAL) CFET / CFFET use LIG/LISD for routing
+    if tech in ("CFET", "CFFET"):
         CONFIG_TEMPLATE["lisd_routing"]["value"] = True
         CONFIG_TEMPLATE["lig_routing"]["value"] = True
             
@@ -391,21 +391,21 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
                 config_template["insert_num_db"]["value"] = 2
             elif track == 4 and tech == "FinFET" and (height_config == "PNNP" or height_config == "NPPN"):
                 config_template["insert_num_db"]["value"] = 1
-            elif tech == "CFET":
+            elif tech in ("CFET", "CFFET"):
                 config_template["insert_num_db"]["value"] = 2
         elif "SDFFQ" in cir:
             if track == 4 and tech == "FinFET" and height_config == "SH":
                 config_template["insert_num_db"]["value"] = 4
             elif track == 4 and tech == "FinFET" and (height_config == "PNNP" or height_config == "NPPN"):
                 config_template["insert_num_db"]["value"] = 2
-            elif tech == "CFET":
+            elif tech in ("CFET", "CFFET"):
                 config_template["insert_num_db"]["value"] = 4
         elif "SDFFSQ" in cir:
             if track == 4 and tech == "FinFET" and height_config == "SH":
                 config_template["insert_num_db"]["value"] = 4
             elif track == 4 and tech == "FinFET" and (height_config == "PNNP" or height_config == "NPPN"):
                 config_template["insert_num_db"]["value"] = 2
-            elif tech == "CFET":
+            elif tech in ("CFET", "CFFET"):
                 config_template["insert_num_db"]["value"] = 4
         elif "DFF" in cir:
             config_template["insert_num_db"]["value"] = 1
@@ -414,21 +414,21 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
                 config_template["insert_num_db"]["value"] = 1
             elif track == 4 and tech == "FinFET" and (height_config == "PNNP" or height_config == "NPPN"):
                 config_template["insert_num_db"]["value"] = 1
-            elif tech == "CFET":
+            elif tech in ("CFET", "CFFET"):
                 config_template["insert_num_db"]["value"] = 1
         elif "PREICG_D1" in cir:
             if track == 4 and tech == "FinFET" and height_config == "SH":
                 config_template["insert_num_db"]["value"] = 2 # 4T
             elif track == 4 and tech == "FinFET" and (height_config == "PNNP" or height_config == "NPPN"):
                 config_template["insert_num_db"]["value"] = 2
-            elif tech == "CFET":
+            elif tech in ("CFET", "CFFET"):
                 config_template["insert_num_db"]["value"] = 2
         elif "PREICG_D4" in cir:
             if track == 4 and tech == "FinFET" and height_config == "SH":
                 config_template["insert_num_db"]["value"] = 4 # 4T
             elif track == 4 and tech == "FinFET" and (height_config == "PNNP" or height_config == "NPPN"):
                 config_template["insert_num_db"]["value"] = 2
-            elif tech == "CFET":
+            elif tech in ("CFET", "CFFET"):
                 config_template["insert_num_db"]["value"] = 4
         elif "CGEN" in cir:
             config_template["insert_num_db"]["value"] = 1
@@ -437,7 +437,7 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
                 config_template["insert_num_db"]["value"] = 2 # 4T
             elif track == 4 and tech == "FinFET" and (height_config == "PNNP" or height_config == "NPPN"):
                 config_template["insert_num_db"]["value"] = 3
-            elif tech == "CFET":
+            elif tech in ("CFET", "CFFET"):
                 config_template["insert_num_db"]["value"] = 2
         elif "XOR" in cir or "XNOR" in cir:
             config_template["insert_num_db"]["value"] = 1
@@ -446,12 +446,12 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
                 config_template["insert_num_db"]["value"] = 1 # 4T
             elif track == 4 and tech == "FinFET" and (height_config == "PNNP" or height_config == "NPPN"):
                 config_template["insert_num_db"]["value"] = 2
-            elif tech == "CFET":
+            elif tech in ("CFET", "CFFET"):
                 config_template["insert_num_db"]["value"] = 1
         elif "DLY4" in cir:
             if track == 4 and tech == "FinFET" and (height_config == "SH" or height_config == "PNNP" or height_config == "NPPN"):
                 config_template["insert_num_db"]["value"] = 1
-            elif tech == "CFET":
+            elif tech in ("CFET", "CFFET"):
                 config_template["insert_num_db"]["value"] = 1
         else:
             config_template["insert_num_db"]["value"] = 1
@@ -464,13 +464,31 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
             config_template["mar_c2c_rule"]["value"]["M1"] = 140
             config_template["eol_c2c_rule"]["value"]["M1"] = 45
 
-        # ^ (CFET Special) Allow Gate and S/D Routing
-        if tech == "CFET":
+        # ^ (CFET / CFFET Special) Allow Gate and S/D Routing
+        if tech in ("CFET", "CFFET"):
             config_template["lisd_routing"]["value"] = True
             config_template["lig_routing"]["value"] = True
             # config_template["eol_c2c_rule"]["value"]["BM0"] = 20
             # config_template["mar_c2c_rule"]["value"]["BM0"] = 40
             # config_template["mar_c2c_rule"]["value"]["M1"] = 0
+
+        # ^ (CFFET Special) Dual-face pin policy (P6b). Inputs: one face per
+        # net (round-robin FIN/BIN over CDL order). Outputs: dual SON on M0+BM0.
+        if tech == "CFFET":
+            config_template["pin_face"] = {
+                "value": {
+                    "face_to_layer": {"front": "M0", "back": "BM0"},
+                    "input": {
+                        "assignment": "round_robin",
+                        "order": "cdl",
+                        "default_face": "front",
+                        "explicit": {},
+                    },
+                    "output": {"mode": "dual", "faces": ["front", "back"]},
+                },
+                "info": "[PIN][CFFET] Input: single-face SON (round-robin front/back "
+                        "over CDL pin order). Output: dual-face SON on M0 and BM0.",
+            }
         # ^ Large Drive Strength Cell (Relative Gap)
         if "_D8" in cir or "_D10" in cir or "_D12" in cir or "_D16" in cir or "_X4" in cir or "_X8" in cir or "_X12" in cir or "_X16" in cir:
             config_template["close_in_low_degree_net"]["value"] = True
