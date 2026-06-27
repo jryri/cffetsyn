@@ -1,0 +1,119 @@
+"""
+CFFET technology configuration — dual-face Flip-FET extending CFET.
+
+Convention A tier names (see docs/skills/cffet-layer-nomenclature/SKILL.md):
+  Back block:  BBOTPC, BTOPPC + BM0
+  Front block: FBOTPC, FTOPPC + FM0 (legacy JSON key M0)
+  Stitch: STV (sole inter-block via)
+"""
+
+from src.cellgen.archit.CFET.tech import CFET_Tech
+
+# Bottom → top placement tier order (z-index 0..3).
+CFFET_TIER_ORDER = ("BBOTPC", "BTOPPC", "FBOTPC", "FTOPPC")
+
+# Intra-block MIV pairs (bottom tier, top tier) per face.
+CFFET_MIV_PAIRS = (
+    ("BBOTPC", "BTOPPC"),
+    ("FBOTPC", "FTOPPC"),
+)
+
+# Legacy JSON layer_name aliases → Convention A (for docs crosswalk).
+LEGACY_LAYER_ALIASES = {
+    "BPC": "FBOTPC",
+    "PC": "FTOPPC",
+    "M0": "FM0",
+}
+
+
+class CFFET_Tech(CFET_Tech):
+    """CFFET: two stacked CFET blocks with dual M0ICPD rails."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("placement_layer_names", frozenset(CFFET_TIER_ORDER))
+        kwargs.setdefault("pin_access_layer_names", frozenset({"BM0", "M0"}))
+        kwargs.setdefault("default_placement_layer", "FTOPPC")
+        super().__init__(*args, **kwargs)
+        self.TECHNOLOGY = "CFFET"
+
+    def get_top_placement_layer(self) -> str:
+        return "FTOPPC"
+
+    def get_bottom_placement_layer(self) -> str:
+        return "BBOTPC"
+
+    # ------------------------------------------------------------------ #
+    # v1 device-tier resolution (front block).                           #
+    #                                                                    #
+    # CFFET v1 places both devices of every gate on the FRONT block, so  #
+    # the inherited CFET column-grid / MIV / long-via machinery operates #
+    # exactly as it does for a single CFET block:                        #
+    #   PMOS -> FTOPPC (top, adjacent to M0 via FTOPCA)                   #
+    #   NMOS -> FBOTPC (bottom, long-via to M0 via FBOTCA; MIV to FTOPPC) #
+    # The back block tiers (BBOTPC / BTOPPC) + BM0 + STV are built into   #
+    # the graph (P2) but carry no placed devices in v1; true dual-face   #
+    # placement (z_var fan-out across faces) is a documented follow-up.  #
+    # ------------------------------------------------------------------ #
+    def get_pmos_layer(self) -> str:
+        if self.stacking_config == "P_on_N":
+            return "FTOPPC"
+        return "FBOTPC"
+
+    def get_nmos_layer(self) -> str:
+        if self.stacking_config == "P_on_N":
+            return "FBOTPC"
+        return "FTOPPC"
+
+    def get_front_bottom_placement_layer(self) -> str:
+        """Front-block bottom tier (the v1 'BPC' analogue for domain math)."""
+        return "FBOTPC"
+
+    def get_placement_layers(self) -> list:
+        return list(CFFET_TIER_ORDER)
+
+    def get_back_route_metals(self) -> list[str]:
+        return ["BM0"]
+
+    def get_route_metals_for_power_row_ban(self) -> list[str]:
+        layers = [self.get_front_route_metal(), "BM0"]
+        layers.extend(self.get_placement_layers())
+        return layers
+
+    def get_virtual_connect_pairs(self) -> list[tuple[str, str]]:
+        return [
+            ("FBOTPC", self.get_front_route_metal()),
+            ("BBOTPC", "BM0"),
+        ]
+
+    def get_intra_block_miv_pairs(self) -> list[tuple[str, str]]:
+        return list(CFFET_MIV_PAIRS)
+
+    def get_intra_block_miv_pair(self) -> tuple[str, str]:
+        """CFET API compatibility — front block pair."""
+        return ("FBOTPC", "FTOPPC")
+
+    def get_stitch_via_name(self) -> str:
+        return "STV"
+
+    def get_m0icpd_fine_route_metals(self) -> list[str]:
+        return [self.get_front_route_metal(), "BM0"]
+
+    def get_bpc_tiers(self) -> tuple[str, ...]:
+        if self.stacking_config == "P_on_N":
+            return ("BBOTPC", "FBOTPC")
+        return ("BTOPPC", "FTOPPC")
+
+    def get_pc_tiers(self) -> tuple[str, ...]:
+        if self.stacking_config == "P_on_N":
+            return ("BTOPPC", "FTOPPC")
+        return ("BBOTPC", "FBOTPC")
+
+    def _validate_height_config(self, height_config, num_rt_track, num_sites) -> int:
+        if height_config != "SH":
+            raise NotImplementedError(f"CFFET supports SH only (got {height_config!r})")
+        if num_rt_track != 3:
+            raise NotImplementedError(
+                f"CFFET v1 supports TRACK=3 M0ICPD only (got {num_rt_track})"
+            )
+        assert num_sites == 1
+        return num_sites

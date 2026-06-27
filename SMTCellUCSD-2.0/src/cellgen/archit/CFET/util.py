@@ -200,7 +200,10 @@ def write_cfet_result(solver, circuit, transistor_vars, edge_vars, net_arc_vars,
              physical coords.
     """
     placement_rows = []
-    pc_pitch = c_tech.get_pitch(layer_name="PC")
+    # Canonical placement tier (CFET: "PC"; CFFET: "FTOPPC"). All placement
+    # tiers share the column grid, so X coords are reported in this tier's pitch.
+    plc_layer = c_tech.get_domain_placement_layer()
+    pc_pitch = c_tech.get_pitch(layer_name=plc_layer)
     m0_pitch = c_tech.get_pitch(layer_name="M0")
 
     for tran in circuit.transistors.values():
@@ -213,7 +216,7 @@ def write_cfet_result(solver, circuit, transistor_vars, edge_vars, net_arc_vars,
         # Physical coords - prefer LGG when available. Both PC and BPC share the
         # column grid, so X is reported in PC pitch.
         if lgg is not None:
-            x = lgg.col_in_layer("PC", x_idx)
+            x = lgg.col_in_layer(plc_layer, x_idx)
             y = lgg.row_in_layer("M0", y_idx)
         else:
             x = x_idx * pc_pitch
@@ -316,11 +319,11 @@ def write_cfet_result(solver, circuit, transistor_vars, edge_vars, net_arc_vars,
         tech_params = {
             "COL": solver.Value(cpp_cost) // 2 + 2,
             "TRACK": c_tech.num_rt_track,
-            "CPP": c_tech.get_pitch("PC"),
+            "CPP": c_tech.get_pitch(plc_layer),
             "M0P": c_tech.get_pitch("M0"),
             "M1P": c_tech.get_pitch("M1"),
             "M2P": c_tech.get_pitch("M2"),
-            "CP_WIDTH": c_tech.get_width("PC"),
+            "CP_WIDTH": c_tech.get_width(plc_layer),
             "M0_WIDTH": c_tech.get_width("M0"),
             "M1_WIDTH": c_tech.get_width("M1"),
             "M2_WIDTH": c_tech.get_width("M2"),

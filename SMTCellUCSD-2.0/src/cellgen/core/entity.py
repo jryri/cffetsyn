@@ -1140,12 +1140,20 @@ class LayerStack:
 
         Convention: any via whose layer_name starts with ``"MIV"`` (so
         ``MIV``, ``MIV1``, ``MIV2``, ... all count) marks a tier boundary.
+        CFFET stacks use ``STV`` (inter-block stitch) as the face split instead.
         When several MIV-prefixed vias exist (QFET 2-placement + N-mid-routing
         chain), the lowest one is the canonical split point - that's the via
         leaving the last placement-side layer on the backside. All metals
         with index **below** the chosen MIV upper layer belong to tier 0
         (backside); the upper layer and above belong to tier 1 (frontside).
         """
+        stv_uppers = [
+            self.layer_to_index[upper_name]
+            for (_, upper_name), via_obj in self.via_layers.items()
+            if via_obj.layer_name == "STV"
+        ]
+        if stv_uppers:
+            return min(stv_uppers)
         miv_uppers = [
             self.layer_to_index[upper_name]
             for (_, upper_name), via_obj in self.via_layers.items()
@@ -1217,3 +1225,8 @@ class LayerStack:
         if idx is None:
             raise ValueError(f"Metal layer '{layer_name}' not found in the stack.")
         return self.metal_layers[idx]
+
+    @classmethod
+    def from_json(cls, json_input: Union[str, dict]) -> "LayerStack":
+        """Load a layer stack from a JSON file path or dict."""
+        return cls(json_input)

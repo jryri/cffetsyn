@@ -30,9 +30,11 @@ from src.cellgen.core.entity import LayerStack
 from src.cellgen.core.util import read_cdl_file
 from src.cellgen.archit.QFET.tech import QFET_Tech
 from src.cellgen.archit.CFET.tech import CFET_Tech
+from src.cellgen.archit.CFFET.tech import CFFET_Tech
 from src.cellgen.archit.FinFET.tech import FinFET_Tech
 from src.cellgen.archit.QFET.main import QFET
 from src.cellgen.archit.CFET.main import CFET
+from src.cellgen.archit.CFFET.main import CFFET
 from src.cellgen.archit.FinFET.main import FinFET
 
 # Driver-level technology constants (match the reference SMTCell driver). The
@@ -45,6 +47,7 @@ _NUM_FIN = 2
 _TECH_REGISTRY = {
     "QFET": (QFET_Tech, QFET, "tech"),
     "CFET": (CFET_Tech, CFET, "c_tech"),
+    "CFFET": (CFFET_Tech, CFFET, "c_tech"),
     "FinFET": (FinFET_Tech, FinFET, "fin_tech"),
 }
 
