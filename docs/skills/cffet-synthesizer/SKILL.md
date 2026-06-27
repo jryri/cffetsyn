@@ -114,14 +114,23 @@ python -m src.cellgen.archit.CFFET.pin_audit \
 - GDS: routing + M0ICPD rails; full LISD/SDT geometry is simplified vs CFET
 - Large cells (DFF, wide AOI): defer until small-cell pin audit passes
 
-## Smoke test matrix (small cases only)
+## Smoke test matrix (2026-06-27 batch, timeout 1000s)
 
-| Cell | Expect spnr | Expect verify_pins |
-|------|-------------|-------------------|
-| INV_X1 | OPTIMAL | PASS |
-| NAND2_X1 | OPTIMAL | PASS (A1 front, A2 back) |
-| NOR2_X1 | OPTIMAL | PASS |
-| AOI21_X1 | INFEASIBLE | skip |
+| Cell | spnr | verify_pins | Input face (round-robin) |
+|------|------|-------------|--------------------------|
+| INV_X1 / INV_X2 | OPTIMAL | PASS | I→M0 |
+| BUF_X1 | OPTIMAL | PASS | I→M0; Z dual M0+BM0 |
+| AND2_X1 | OPTIMAL | PASS | A1→M0, A2→BM0 |
+| NAND2_X1 / NOR2_X1 | OPTIMAL | PASS | A1→M0, A2→BM0 |
+| NAND3_X1 | OPTIMAL | PASS | A1→M0, A2→BM0, A3→M0 |
+| AOI21_X1 / OAI21_X1 | INFEASIBLE | — | 6T; 3 inputs, dual output capacity |
+| MUX2_X1 / NAND2_X2 | INFEASIBLE (presolve) | — | `all_diff` UNSAT (multi-finger / 6T) |
+
+```bash
+timeout 1000 make CONFIG=CFFET_3T_SH CELL_NAME="INV_X1 NAND2_X1" spnr verify_pins
+```
+
+Defer: `DFF*`, `*_X4`, `*_X8`, wide AOI/OAI22.
 
 ## When NOT to use this skill
 
