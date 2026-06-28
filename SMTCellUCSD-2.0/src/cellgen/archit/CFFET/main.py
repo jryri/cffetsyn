@@ -699,7 +699,7 @@ class CFFET(CFET):
         self._only_one_mdi_per_col()
         enforce_mdi_split_gate(self)
         if self._cfg_get("enable_cross_face_merge", True) and self._cfg_get(
-            "enforce_cross_face_merge", True
+            "enforce_cross_face_merge", False
         ):
             enforce_cross_face_merge_obligation(self)
         if self._multi_row_placement_enabled() and self._cfg_get(
