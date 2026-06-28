@@ -124,4 +124,5 @@ Before merging layer/spec changes:
 
 ## Reference
 
-Full tables, stack diagram, and CFFET block layout: `docs/superpowers/specs/2026-06-26-layer-nomenclature-design.md`
+- Process hierarchy (CFET / FFET / CFFET, TG connectivity): **`cffet-process-technology`**
+- Full tables, stack diagram: `docs/superpowers/specs/2026-06-26-layer-nomenclature-design.md`

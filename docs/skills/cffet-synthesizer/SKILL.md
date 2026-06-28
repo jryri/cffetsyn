@@ -16,7 +16,7 @@ description: Use when synthesizing, testing, debugging, or extending CFFET (dual
 | CDL | `input/cdl/PROBE_2F4T.cdl` |
 | Working dir | `SMTCellUCSD-2.0/` |
 
-**Companion skill:** `cffet-layer-nomenclature` for naming (FBOTPC, STV, FM0=`M0` in JSON).
+**Companion skills:** `cffet-process-technology` (CFET/FFET/CFFET stack & TG), `cffet-layer-nomenclature` (naming).
 
 ## LGG stack (metal indices 0→8)
 
