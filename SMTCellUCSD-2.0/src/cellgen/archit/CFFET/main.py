@@ -58,6 +58,7 @@ from src.cellgen.archit.CFFET.inter_row_merge import (
     enforce_inter_row_merge_obligation,
 )
 from src.cellgen.archit.CFFET.mdi_split_gate import enforce_mdi_split_gate
+from src.cellgen.archit.CFFET.tier_utilization import init_npvp_utilization_vars
 from src.cellgen.core.entity import Model
 from src.cellgen.core.variable import TransistorVar
 from src.cellgen.core.util import log_variable_info
@@ -436,6 +437,9 @@ class CFFET(CFET):
                     self.opt.AddBoolOr([placed_ci.Not(), placed_zi.Not()]).OnlyEnforceIf(is_at.Not())
                     self.placed_tran_at_xzi_vars[(tran.name, ci, zi)] = is_at
 
+        if self._cfg_get("enable_npvp_utilization", True):
+            init_npvp_utilization_vars(self)
+
     def _cffet_model_tier_restriction(self):
         """
         Constrain each transistor's ``z_var`` to the placement tier(s) legal for
@@ -639,15 +643,36 @@ class CFFET(CFET):
             pairwise_inter_row_merge(self)
 
     def _build_solve_objectives(self):
-        """WSUM objectives + FDM fin-cut penalty (+1 CPP per active FDM)."""
+        """WSUM objectives + FDM fin-cut + FFET-inspired NPNP tier utilization."""
         objectives = super()._build_solve_objectives()
         overrides = self._cfg_get("objective_weights", {}) or {}
+        from src.cellgen.core.objective import Objective
+
         fdm_weight = overrides.get("fdm_penalty", 1000)
         if fdm_weight:
-            from src.cellgen.core.objective import Objective
             objectives = list(objectives) + [
                 (lambda: Objective.fdm_penalty(self), fdm_weight, "min"),
             ]
+
+        if self._cfg_get("enable_npvp_utilization", True):
+            npvp_weight = overrides.get("cffet_npvp_utilization", 100)
+            if npvp_weight:
+                objectives = list(objectives) + [
+                    (
+                        lambda: Objective.cffet_npvp_utilization(self),
+                        npvp_weight,
+                        "max",
+                    ),
+                ]
+            imb_weight = overrides.get("cffet_npvp_block_imbalance", 50)
+            if imb_weight:
+                objectives = list(objectives) + [
+                    (
+                        lambda: Objective.cffet_npvp_block_imbalance(self),
+                        imb_weight,
+                        "min",
+                    ),
+                ]
         return objectives
 
     # ================================================================== #
@@ -795,6 +820,33 @@ class CFFET(CFET):
             return entry["value"]
         return None
 
+    def _cffet_gate_polarity(self, net_name: str) -> str | None:
+        """
+        FFET-style gate polarity hint for an input net.
+
+        Returns ``"back"`` when the net gates NMOS only, ``"front"`` when it
+        gates PMOS only, or ``None`` when mixed / unknown (use round-robin).
+        """
+        net = self.circuit.nets.get(net_name)
+        if net is None:
+            return None
+        models = set()
+        for tran_name, pin in net.connected_transistors:
+            if pin != "gate":
+                continue
+            tran = self.circuit.transistors.get(tran_name)
+            if tran is None:
+                continue
+            model = tran.model
+            if isinstance(model, str):
+                model = Model.PMOS if model.lower() == "pmos" else Model.NMOS
+            models.add(model)
+        if models == {Model.NMOS}:
+            return "back"
+        if models == {Model.PMOS}:
+            return "front"
+        return None
+
     def _resolve_input_faces(self):
         """
         Map each primary-input net to its single assigned route-metal layer.
@@ -823,21 +875,28 @@ class CFFET(CFET):
 
         assignment = {}
         rr = 0
-        assignment_mode = "round_robin"
+        assignment_mode = "ffet"
         if cfg:
-            assignment_mode = (cfg.get("input", {}) or {}).get("assignment", "round_robin")
+            assignment_mode = (cfg.get("input", {}) or {}).get("assignment", "ffet")
         subckt = self.circuit.subckt_name
         if assignment_mode == "round_robin" and subckt.startswith(
             ("AOI", "OAI", "MUX", "LHQ", "LAT", "DFF")
         ):
             assignment_mode = "same_face"
-        if assignment_mode == "same_face":
-            explicit = {}
+        polarity_faces: list[str] = []
         for net_name in self.circuit.input_net_names():
             if net_name in explicit:
                 face = explicit[net_name]
             elif assignment_mode == "same_face":
                 face = default_face
+                explicit[net_name] = face
+            elif assignment_mode == "ffet":
+                hint = self._cffet_gate_polarity(net_name)
+                if hint is not None:
+                    face = hint
+                else:
+                    face = faces[rr % len(faces)]
+                    rr += 1
                 explicit[net_name] = face
             else:
                 face = faces[rr % len(faces)]

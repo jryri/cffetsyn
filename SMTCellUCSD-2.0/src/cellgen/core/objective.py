@@ -273,6 +273,29 @@ class Objective:
         return sum(pin_separation_terms)
 
     @staticmethod
+    def cffet_npvp_utilization(finfet):
+        """
+        Maximize CFFET NPNP tier usage (FFET-inspired dual-block spread).
+
+        Requires ``tier_occupied_vars`` / ``npvp_spread_vars`` from
+        ``CFFET.tier_utilization.init_npvp_utilization_vars``.
+        """
+        score = 0
+        for var in getattr(finfet, "tier_occupied_vars", {}).values():
+            score += var
+        for var in getattr(finfet, "npvp_spread_vars", {}).values():
+            score += var
+        return score
+
+    @staticmethod
+    def cffet_npvp_block_imbalance(finfet):
+        """Minimize |back-block devices − front-block devices|."""
+        var = getattr(finfet, "npvp_block_imbalance_var", None)
+        if var is None:
+            return 0
+        return var
+
+    @staticmethod
     def top_layer_usage(finfet):
         """
         Objective: Minimize top layer usage.

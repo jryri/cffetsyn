@@ -479,15 +479,19 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
                 "value": {
                     "face_to_layer": {"front": "M0", "back": "BM0"},
                     "input": {
-                        "assignment": "round_robin",
+                        "assignment": "ffet",
                         "order": "cdl",
                         "default_face": "front",
                         "explicit": {},
                     },
                     "output": {"mode": "dual", "faces": ["front", "back"]},
                 },
-                "info": "[PIN][CFFET] Input: single-face SON (round-robin front/back "
-                        "over CDL pin order). Output: dual-face SON on M0 and BM0.",
+                "info": "[PIN][CFFET] FFET-style input SON: polarity hint (N→back, "
+                        "P→front) + round-robin for mixed gates. Output: dual M0+BM0.",
+            }
+            config_template["enable_npvp_utilization"] = {
+                "value": True,
+                "info": "[CFFET][FFET] NPNP tier occupancy + back/front block spread objectives.",
             }
             config_template["enable_cross_face_merge"] = {
                 "value": True,

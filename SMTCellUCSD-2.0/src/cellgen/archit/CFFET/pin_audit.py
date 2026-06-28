@@ -111,17 +111,19 @@ def resolve_input_faces(
     face_to_layer = {"front": FRONT_METAL, "back": BACK_METAL}
     explicit: dict[str, str] = {}
     default_face = "front"
-    assignment_mode = "round_robin"
+    assignment_mode = "ffet"
     if pin_face:
         face_to_layer = dict(pin_face.get("face_to_layer", face_to_layer))
         in_cfg = pin_face.get("input", {}) or {}
-        assignment_mode = in_cfg.get("assignment", "round_robin")
+        assignment_mode = in_cfg.get("assignment", "ffet")
         explicit_raw = in_cfg.get("explicit", {}) or {}
         for net, face in explicit_raw.items():
             explicit[net] = face_to_layer.get(face, FRONT_METAL)
         default_face = in_cfg.get("default_face", "front")
 
-    if assignment_mode == "round_robin" and subckt_name.startswith(("AOI", "OAI", "MUX")):
+    if assignment_mode == "round_robin" and subckt_name.startswith(
+        ("AOI", "OAI", "MUX", "LHQ", "LAT", "DFF")
+    ):
         assignment_mode = "same_face"
     if assignment_mode == "same_face":
         explicit = {}
