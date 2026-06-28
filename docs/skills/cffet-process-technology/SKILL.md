@@ -128,13 +128,35 @@ Target: one CPP column, one face, A↔B bidirectional pass.
 - Requires **SG DRC + solver vars** — **not** in repo today  
 - **CG `gate_share` must NOT** bind S and S̄ to same x gate net
 
-### Process hypothesis: outer S/D short → inner SG (DTCO discussion)
+### User DTCO stack — single-column strict TG (top → bottom)
 
-Some FFET flows tie or strap **outer** diffusion endpoints (e.g. upper/lower stack ends) so the **middle active N/P pair** can receive **independent gate contacts (SG)** while staying one fin column. That is a **fabrication / strap rule**, not something the current CP-SAT model exposes.
+One CPP column, **top to bottom** (user-defined). **Do not paraphrase as “FMIV + gate_share”.**
 
-Before coding: specify **which diffusion nodes are shorted** (to each other vs to rail vs through FMIV only) and verify with process team that SG masks are legal on that column.
+```
+  ┌─ N 短路          ← top N: S/D strapped (tie-off)
+  ├─ common gate     ← upper gate region
+  ├─ P               ← TG PMOS (pass), gate = S̄
+  ├─ MDI             ← **split gate boundary** (SG — separates S̄ from S)
+  ├─ N               ← TG NMOS (pass), gate = S
+  ├─ CG              ← lower common gate region
+  └─ P 短路          ← bottom P: S/D strapped (tie-off)
+```
 
-**Do not conflate:** FMIV channel tie (enables parallel A↔B) **≠** SG (enables S vs S̄ on same column).
+| Segment | Role |
+|---------|------|
+| **N 短路** (top) | Upper strap / tie-off N — not the pass device |
+| **common gate** | Upper gate electrode section |
+| **P** | Active **TG PMOS**, gate **S̄** |
+| **MDI** | **Split gate** — physical separator between P-gate (S̄) and N-gate (S); ASPDAC-class **MD** interconnect, not “FMIV = SG” |
+| **N** | Active **TG NMOS**, gate **S** |
+| **CG** | Lower common gate region |
+| **P 短路** (bottom) | Lower strap / tie-off P — not the pass device |
+
+**Channel (A↔B):** parallel through the **middle P + N**; top N short + bottom P short are **outer diffusion straps**, not arbitrary solver net shorts.
+
+**Strict TG:** middle pair only — gate(N)=S, gate(P)=S̄, split by **MDI**.
+
+**SMTCell gap:** no `MDI` SG primitive; no top-N-short / bottom-P-short tier rules; `gate_share` still assumes CG when gate nets differ incorrectly. Future: SG via MDI + strap tiers + FMIV on pass channel if needed.
 
 ## CFET vs CFFET pass connectivity (solver)
 
