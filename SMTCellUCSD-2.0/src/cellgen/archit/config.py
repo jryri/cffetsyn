@@ -479,15 +479,15 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
                 "value": {
                     "face_to_layer": {"front": "M0", "back": "BM0"},
                     "input": {
-                        "assignment": "ffet",
+                        "assignment": "round_robin",
                         "order": "cdl",
                         "default_face": "front",
                         "explicit": {},
                     },
                     "output": {"mode": "dual", "faces": ["front", "back"]},
                 },
-                "info": "[PIN][CFFET] FFET-style input SON: polarity hint (N→back, "
-                        "P→front) + round-robin for mixed gates. Output: dual M0+BM0.",
+                "info": "[PIN][CFFET] Input: single-face SON (round-robin front/back "
+                        "over CDL pin order). Output: dual M0+BM0. Opt-in: assignment=ffet.",
             }
             config_template["enable_npvp_utilization"] = {
                 "value": True,
@@ -498,8 +498,9 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
                 "info": "[CFFET v2] Create GM/DM/FDM cross-face merge variables.",
             }
             config_template["enforce_cross_face_merge"] = {
-                "value": True,
-                "info": "[CFFET v2] Require GM|DM|FDM when a net spans both faces.",
+                "value": False,
+                "info": "[CFFET v2] Opt-in: require GM|DM|FDM when a net spans both faces. "
+                        "Default OFF — back/front may stay separate or merge via routing.",
             }
             config_template["enable_multi_row"] = {
                 "value": True,

@@ -32,7 +32,7 @@ When implementing FFET-inspired tier spread:
 | P3b | Pin candidate ⇒ `z_var` coupling (device pins same face) | ON | Yes |
 | P3b | Per-block diffusion alignment BBOTPC↔BTOPPC, FBOTPC↔FTOPPC | ON | Yes |
 | P4 | AtMostOne STV / FMIV / BMIV / MDI per column | ON | Yes |
-| P5 | `enforce_cross_face_merge`: net spanning faces ⇒ GM\|DM\|FDM | **ON** | Yes |
+| P5 | `enforce_cross_face_merge`: net spanning faces ⇒ GM\|DM\|FDM | **OFF** | Yes when enabled |
 | P3v3 | `enforce_inter_row_merge`: net spanning y rows ⇒ IRGM\|IRMD | **ON** | Yes |
 | P6b | Input: exactly 1 SON on **assigned** face; Output: 1 SON M0 + 1 SON BM0 | ON | Yes |
 | P6b | SON node uniqueness / one SON per (layer,col) | ON | Yes |

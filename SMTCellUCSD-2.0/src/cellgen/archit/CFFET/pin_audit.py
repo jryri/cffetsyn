@@ -111,11 +111,11 @@ def resolve_input_faces(
     face_to_layer = {"front": FRONT_METAL, "back": BACK_METAL}
     explicit: dict[str, str] = {}
     default_face = "front"
-    assignment_mode = "ffet"
+    assignment_mode = "round_robin"
     if pin_face:
         face_to_layer = dict(pin_face.get("face_to_layer", face_to_layer))
         in_cfg = pin_face.get("input", {}) or {}
-        assignment_mode = in_cfg.get("assignment", "ffet")
+        assignment_mode = in_cfg.get("assignment", "round_robin")
         explicit_raw = in_cfg.get("explicit", {}) or {}
         for net, face in explicit_raw.items():
             explicit[net] = face_to_layer.get(face, FRONT_METAL)

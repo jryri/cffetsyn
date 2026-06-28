@@ -875,15 +875,16 @@ class CFFET(CFET):
 
         assignment = {}
         rr = 0
-        assignment_mode = "ffet"
+        assignment_mode = "round_robin"
         if cfg:
-            assignment_mode = (cfg.get("input", {}) or {}).get("assignment", "ffet")
+            assignment_mode = (cfg.get("input", {}) or {}).get("assignment", "round_robin")
         subckt = self.circuit.subckt_name
         if assignment_mode == "round_robin" and subckt.startswith(
             ("AOI", "OAI", "MUX", "LHQ", "LAT", "DFF")
         ):
             assignment_mode = "same_face"
-        polarity_faces: list[str] = []
+        if assignment_mode == "same_face":
+            explicit = {}
         for net_name in self.circuit.input_net_names():
             if net_name in explicit:
                 face = explicit[net_name]
