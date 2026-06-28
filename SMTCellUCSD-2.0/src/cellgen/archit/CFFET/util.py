@@ -211,7 +211,10 @@ def write_cffet_result(
         f.write(f"{'Name':<25} {'Value':>14}\n")
         f.write("-" * 42 + "\n")
         tech_params = {
-            "COL": solver.Value(cpp_cost) // 2 + 2,
+            # cpp_cost = max device-column index (odd SDG grid). Stacked CFFET:
+            # one x column hosts up to 4 z-tiers → COL counts CPP from index
+            # without the extra +1 boundary pad used in planar CFET/FinFET.
+            "COL": max(1, solver.Value(cpp_cost) // 2 + 1),
             "TRACK": c_tech.num_rt_track,
             "CPP": c_tech.get_pitch(plc_layer),
             "M0P": c_tech.get_pitch("M0"),

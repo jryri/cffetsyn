@@ -33,10 +33,9 @@ def _shared_channel_net(tran_p, tran_n, circuit):
 
 def gates_are_complementary(gate_p: str, gate_n: str) -> bool:
     """
-    Heuristic complement check for TG split-gate pairs.
+    Heuristic complement check for TG split-gate pairs (S / S̄ style).
 
-    Different gate nets always qualify; naming patterns (S/SN, *_B, etc.)
-    are noted when present.
+    Returns False unless naming suggests true complementary control nets.
     """
     if gate_p == gate_n:
         return False
@@ -51,7 +50,7 @@ def gates_are_complementary(gate_p: str, gate_n: str) -> bool:
             return True
         if a == "SN" and b == "S":
             return True
-    return True
+    return False
 
 
 def detect_tg_split_gate_pairs(circuit):

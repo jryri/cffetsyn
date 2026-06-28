@@ -83,7 +83,8 @@ class TestMdiSplitGateDetection(unittest.TestCase):
 
     def test_gates_are_complementary_heuristics(self):
         self.assertTrue(gates_are_complementary("S", "SN"))
-        self.assertTrue(gates_are_complementary("A", "B"))
+        self.assertTrue(gates_are_complementary("SN", "S"))
+        self.assertFalse(gates_are_complementary("A1", "A2"))
         self.assertFalse(gates_are_complementary("A", "A"))
 
 

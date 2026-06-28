@@ -515,7 +515,7 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
             }
             config_template["enforce_mdi_split_gate"] = {
                 "value": False,
-                "info": "[CFFET] Hard-enforce MDI split-gate placement for complementary TG pairs.",
+                "info": "[CFFET] Hard-enforce MDI split-gate (opt-in; logic cells may have non-TG pairs).",
             }
             config_template["cfet_cross_device_via_lb"] = {
                 "value": False,
