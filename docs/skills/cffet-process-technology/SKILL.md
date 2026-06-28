@@ -134,23 +134,87 @@ One CPP column, **top → bottom** (user-defined). **Do not paraphrase as “FMI
 | **N 短路** (top) | Upper strap / tie-off N — not pass device | e.g. `FTOPPC` 一帶 |
 | **common gate** | Upper gate electrode section | above seam |
 | **P** | Active **TG PMOS**, gate **S̄** | seam upper (`BTOPPC` side) |
-| **MDI** | **Split gate** — separates P-gate (S̄) from N-gate (S); **not** FMIV, **not** `gate_share` | **at STV seam** |
+| **MDI** | **Middle Dielectric Isolation** — 上下 gate stack 間厚介電；split gate / multi-Vt 前提 | **CFFET 正中間**，P 與 N 之間 |
 | **N** | Active **TG NMOS**, gate **S** | seam lower (`FBOTPC` side) |
 | **CG** | Lower common gate region | below seam |
 | **P 短路** (bottom) | Lower strap / tie-off P — not pass device | e.g. `BBOTPC` 一帶 |
 
 **Channel (A↔B):** through **middle P + N** in parallel; **N 短路** / **P 短路** are outer diffusion straps, not arbitrary solver net shorts.
 
-**Strict TG:** middle pair only — gate(N)=S, gate(P)=S̄, split by **MDI** at **CFFET 正中間**.
+**Strict TG:** middle pair only — gate(N)=S, gate(P)=S̄, isolated by **MDI** at **CFFET 正中間**.
 
-### Alternative without MDI (solver-only today)
+## MDI → split gate（物理機制）
 
-If process does **not** place MDI at STV seam:
+**MDI** = **Middle Dielectric Isolation（中間介電層隔離）**。
 
-- **Two gate columns:** gate(N)=S @ col α, gate(P)=S̄ @ col β, α≠β — matches current solver, **not** single gate column.
-- Pass channel may still use **FMIV/BMIV** within one block, but that is **intra-block** tie — different problem from **STV-center MDI split gate**.
+在上下兩層電晶體 gate stack 之間刻意插入的**厚實絕緣層**，主要目的：
 
-**SMTCell gap:** no `MDI` primitive; no N短路/P短路 strap tier rules; `gate_share` still assumes CG. Future: MDI @ STV seam + strap tiers + channel constraints on middle P/N.
+1. **阻斷上下層漏電路徑**（gate-to-gate、body coupling）
+2. **隔離上下 gate 電場**，使上層 gate 電位不會驅動下層 channel（反之亦然）
+
+因此 MDI 是 **split gate 的製程前提**，不是 routing merge 的別名：
+
+| 結構 | 作用 | 能否替代 MDI |
+|------|------|-------------|
+| **MDI** | 上下 gate 電極**物理隔離** → 同欄可 gate(P)=S̄、gate(N)=S | — |
+| **STV** | `BTOPPC↔FBOTPC` **channel / diffusion** stitch | 否（走 channel，不管 gate 隔離） |
+| **FMIV/BMIV** | 同 block 內 `*BOTPC↔*TOPPC` channel 垂直 tie | 否 |
+| **`gate_share`** | 同 gate net 的 N+P 同 gate column（**CG**） | 相反（禁止 split gate） |
+
+### 對準 user stack 的 split gate 剖面
+
+同一 CPP column、同一 gate column `x`，**channel 與 gate 分工**：
+
+```
+gate 方向（上→下）          channel 方向（同欄 x）
+─────────────────          ─────────────────────
+N 短路  (strap)            （非 pass）
+common gate
+P       gate = S̄  ─── MDI ───  gate = S       N  @ FBOTPC ─┐
+════ MDI ════ 厚介電 ════                              ├── STV seam
+N       gate = S           P pass @ BTOPPC ─── STV ───┘   （A↔B net）
+CG
+P 短路  (strap)
+```
+
+- **Pass 對**：P（上，S̄）+ N（下，S）= strict TG
+- **MDI**：夾在 P gate stack 與 N gate stack 之間 → **split gate**
+- **STV**：讓 P、N 的 S/D 接到同一 **channel net**（A↔B），與 MDI 正交
+- **N短路 / P短路**：外圈 diffusion strap，不參與 pass
+
+文獻（imec mCFET / VLSI'23）：MDI 使 top/bottom gate **獨立 work-function / Vt**，同一 gate column 可對上下 device 施加不同 gate 電位 — 對 TG 即 S 與 S̄。
+
+### SMTCell 建模草案（討論用）
+
+**辨識 TG split-gate 對**（CDL）：同 channel net、一 P 一 N、`gate(P)` 與 `gate(N)` 互補（S / S̄）。
+
+**Placement 硬約束**（啟用 `mdi_tg` 時）：
+
+| 變數 / 約束 | 內容 |
+|-------------|------|
+| `same ci` | pass P 與 pass N 同 device column |
+| `z(P)=BTOPPC`, `z(N)=FBOTPC` | seam 上下 tier |
+| `gate col` | 兩者同一 gate column `ci+1`（**靠 MDI 才合法**） |
+| `mdi_at_col[ci]` | BOOL：此欄宣告 MDI split-gate primitive |
+| `stv_on_channel` | channel net 在該 column 走 STV |
+| `gate_share_at_col[gate_col]=0` | 此 gate column 標記為 **gate cut / split**（非 CG 欄） |
+
+**隔離約束**：
+
+- `S` 與 `S̄` net **禁止** GM/IRGM/任意 merge
+- **禁止** 對 pass 對建立 `gate_share_*`（不同 net 已自然不建，但需防 CDL 誤接）
+
+**與現有 `gate_cut` 的關係**：
+
+- 現行：`gate_share_at_col=0` → 連續 gate cut window（給**不同 gate column 的 CG 切斷**）
+- MDI split gate：`gate_share_at_col=0` 但 **同一 gate column** 上、下 tier 各接不同 net — 需 **`mdi_at_col` 豁免**「同 column 只能一 net」的隱含假設，改為 **同 column、不同 z 可不同 gate net**
+
+**代價 / DRC**（objective 或 hard）：
+
+- `mdi_at_col` 可能與 inner spacer、multi-Vt 共用製程模組（imec rMDI / eMDI）
+- 可設 `AtMostOne mdi_at_col` per seam column（類 STV）
+
+**現況 gap**：無 `mdi_at_col`、無 strap tier（N短路/P短路）、無「同 gate column + 不同 z gate net」的 pin 規則。
 
 ## CFET vs CFFET pass connectivity (solver)
 
