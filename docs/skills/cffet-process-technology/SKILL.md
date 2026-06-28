@@ -84,79 +84,73 @@ Dual-sided cells connect nets through **merge structures**, not “draw a wire a
 
 Strict TG truth table: S=1 → N on P off; S=0 → N off P on. Requires **two gate nets** on the pass pair.
 
-## Gate modes: CG vs SG (same column)
+## Gate modes: CG vs split gate (same column, CFFET)
 
 | Mode | Same column N+P | Gate nets | CFET `CFET_3T_SH` | CFFET solver today |
 |------|-----------------|-----------|-------------------|---------------------|
 | **CG** (common gate) | Yes | N and P share **one** gate net | Default; `gate_share` → same x | Same |
-| **SG** (split gate) | Yes | N gate **≠** P gate (S vs S̄) | **Not modeled** — needs F3ET-style independent gate metals | **Not modeled** |
+| **Split gate** | Yes | N gate **≠** P gate (S vs S̄) | **Not modeled** | **Not modeled** — needs **MDI** at CFFET center |
 
-**Iron rule:** `gate_share` in SMTCell only fires when both devices share the **same gate net** → enforces **CG**, forbids strict TG on one CG column.
+**Iron rule:** `gate_share` only fires when both devices share the **same gate net** → enforces **CG**, forbids strict TG on one CG column.
 
 **Gate cut** = different gate nets on **different gate columns** (S column vs S̄ column). Valid strict TG, but **not single gate column**.
 
-## Single-column CFFET strict TG — design space
+## CFFET 正中間 — STV seam（strict TG 所在）
 
-Target: one CPP column, one face, A↔B bidirectional pass.
+**Focus here for TG.** Do **not** redirect to FFET / F3ET / generic “SG process” when discussing CFFET pass gates.
+
+CFFET Z-stack (bottom → top, one CPP column):
 
 ```
-        A o──────── channel net ────────o B
-              FTOPPC  PMOS   gate = S̄
-                 ║ FMIV  (channel vertical tie)
-              FBOTPC  NMOS   gate = S
-              same device column x
+  FTOPPC ─┐
+          │  front CFET block
+  FBOTPC ─┤
+  ═ STV ══╪══ CFFET 正中間（back block ↔ front block 唯一 stitch）
+  BTOPPC ─┤
+          │  back CFET block
+  BBOTPC ─┘
 ```
 
-### What single column always needs (channel)
+- **STV** = sole inter-block via: `BTOPPC ↔ FBOTPC` (`AtMostOne STV/col`).
+- **CFFET 正中間** = STV seam 一帶：back block 頂層 `BTOPPC` 與 front block 底層 `FBOTPC` 之間的垂直結構。
+- Strict TG 的 **pass P + pass N + MDI** 落在這個 seam 區，不是 front-only CFET 的 `FMIV` 兩 tier，也不是用 FFET 文獻去套。
 
-| Item | Rule |
-|------|------|
-| Face | N and P on **same** face (front `F*` or back `B*`) — no STV on pass channel |
-| x | Same device column |
-| z | N @ `*BOTPC`, P @ `*TOPPC` |
-| Channel | **`FMIV`** (front) or **`BMIV`** (back) on shared S/D net — legal vertical tie, not arbitrary metal short |
+## Single-column CFFET strict TG — user DTCO stack
 
-### Strict TG gates — two implementation paths
-
-**Path A — Two gate columns (no SG)**  
-- gate(N)=S on gate col α, gate(P)=S̄ on gate col β, α≠β  
-- Channel still one device column + FMIV  
-- Matches current solver (no SG); **not single gate column**
-
-**Path B — Single gate column + SG (process)**  
-- gate(N)=S, gate(P)=S̄ on **same device column**, independent gate metals (F3ET **SG** class)  
-- Requires **SG DRC + solver vars** — **not** in repo today  
-- **CG `gate_share` must NOT** bind S and S̄ to same x gate net
-
-### User DTCO stack — single-column strict TG (top → bottom)
-
-One CPP column, **top to bottom** (user-defined). **Do not paraphrase as “FMIV + gate_share”.**
+One CPP column, **top → bottom** (user-defined). **Do not paraphrase as “FMIV + gate_share”.**
 
 ```
   ┌─ N 短路          ← top N: S/D strapped (tie-off)
   ├─ common gate     ← upper gate region
-  ├─ P               ← TG PMOS (pass), gate = S̄
-  ├─ MDI             ← **split gate boundary** (SG — separates S̄ from S)
-  ├─ N               ← TG NMOS (pass), gate = S
+  ├─ P               ← TG PMOS (pass), gate = S̄   ─┐
+  ├─ MDI             ← split gate boundary         ├─ CFFET 正中間（STV seam）
+  ├─ N               ← TG NMOS (pass), gate = S    ─┘
   ├─ CG              ← lower common gate region
   └─ P 短路          ← bottom P: S/D strapped (tie-off)
 ```
 
-| Segment | Role |
-|---------|------|
-| **N 短路** (top) | Upper strap / tie-off N — not the pass device |
-| **common gate** | Upper gate electrode section |
-| **P** | Active **TG PMOS**, gate **S̄** |
-| **MDI** | **Split gate** — physical separator between P-gate (S̄) and N-gate (S); ASPDAC-class **MD** interconnect, not “FMIV = SG” |
-| **N** | Active **TG NMOS**, gate **S** |
-| **CG** | Lower common gate region |
-| **P 短路** (bottom) | Lower strap / tie-off P — not the pass device |
+| Segment | Role | CFFET tier hint |
+|---------|------|-----------------|
+| **N 短路** (top) | Upper strap / tie-off N — not pass device | e.g. `FTOPPC` 一帶 |
+| **common gate** | Upper gate electrode section | above seam |
+| **P** | Active **TG PMOS**, gate **S̄** | seam upper (`BTOPPC` side) |
+| **MDI** | **Split gate** — separates P-gate (S̄) from N-gate (S); **not** FMIV, **not** `gate_share` | **at STV seam** |
+| **N** | Active **TG NMOS**, gate **S** | seam lower (`FBOTPC` side) |
+| **CG** | Lower common gate region | below seam |
+| **P 短路** (bottom) | Lower strap / tie-off P — not pass device | e.g. `BBOTPC` 一帶 |
 
-**Channel (A↔B):** parallel through the **middle P + N**; top N short + bottom P short are **outer diffusion straps**, not arbitrary solver net shorts.
+**Channel (A↔B):** through **middle P + N** in parallel; **N 短路** / **P 短路** are outer diffusion straps, not arbitrary solver net shorts.
 
-**Strict TG:** middle pair only — gate(N)=S, gate(P)=S̄, split by **MDI**.
+**Strict TG:** middle pair only — gate(N)=S, gate(P)=S̄, split by **MDI** at **CFFET 正中間**.
 
-**SMTCell gap:** no `MDI` SG primitive; no top-N-short / bottom-P-short tier rules; `gate_share` still assumes CG when gate nets differ incorrectly. Future: SG via MDI + strap tiers + FMIV on pass channel if needed.
+### Alternative without MDI (solver-only today)
+
+If process does **not** place MDI at STV seam:
+
+- **Two gate columns:** gate(N)=S @ col α, gate(P)=S̄ @ col β, α≠β — matches current solver, **not** single gate column.
+- Pass channel may still use **FMIV/BMIV** within one block, but that is **intra-block** tie — different problem from **STV-center MDI split gate**.
+
+**SMTCell gap:** no `MDI` primitive; no N短路/P短路 strap tier rules; `gate_share` still assumes CG. Future: MDI @ STV seam + strap tiers + channel constraints on middle P/N.
 
 ## CFET vs CFFET pass connectivity (solver)
 
@@ -165,10 +159,11 @@ One CPP column, **top to bottom** (user-defined). **Do not paraphrase as “FMIV
 - PMOS @ `PC`, NMOS @ `BPC`; channel → **LISD** + **MIV**.
 - Strict TG on **one CG column** is **impossible** (need S and S̄) unless **two gate columns** or SG process outside model.
 
-### CFFET — four tiers, front/back choice
+### CFFET — four tiers + STV center
 
-- Channel @ same x → **FMIV/BMIV**, not LISD (`z_eq` fails across BOT/TOP).
-- Strict TG: Path A (two gate cols) or Path B (SG + process short/straps).
+- Intra-block channel @ same x → **FMIV/BMIV**, not LISD (`z_eq` fails across BOT/TOP).
+- Strict TG @ **CFFET 正中間:** middle **P + MDI + N** at STV seam; outer **N 短路 / P 短路** straps.
+- Without MDI: two gate columns only (solver today).
 - MUX2 CDL pass legs (both gates `S`) are **not** strict TG — do not use them to validate TG flow.
 
 ## SMTCell Preset ↔ Paper Mapping
@@ -192,8 +187,9 @@ One CPP column, **top to bottom** (user-defined). **Do not paraphrase as “FMIV
 | “BOT tier = back face” | `FBOTPC` = front **Bottom** tier; back face = **`B*`** prefix (`BBOTPC`, `BM0`) |
 | “TG uses same LISD as CFET in CFFET” | N+P on `FBOTPC`+`FTOPPC` → **FMIV vertical path**, not same-tier LISD |
 | “MUX pass (both gates S) = TG” | Strict TG needs **gate(N)=S, gate(P)=S̄** |
-| “Single-column TG = same gate column with CG” | **Impossible** for strict TG; need **SG** or **two gate columns** |
-| “FMIV short = SG” | FMIV = **channel** tie only; SG = **separate gate metals** |
+| “Single-column TG = same gate column with CG” | **Impossible** for strict TG; need **MDI @ STV seam** or **two gate columns** |
+| “FMIV short = MDI / split gate” | FMIV = **intra-block channel** tie; **MDI** = split gate at **CFFET 正中間** |
+| “Discuss CFFET TG via FFET/F3ET SG” | Wrong framing — anchor on **STV seam stack** (N短路–P–MDI–N–P短路) |
 | `enable_routing=false` = two-step P&R | **Diagnostic only** — one CP-SAT model with routing constraints stripped |
 | Confusing **row** (M0 track) with **tier** (PC layer) | See `cffet-layer-nomenclature` axis table |
 
