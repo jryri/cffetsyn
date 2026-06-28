@@ -5,6 +5,7 @@ Convention A tier names (see docs/skills/cffet-layer-nomenclature/SKILL.md):
   Back block:  BBOTPC, BTOPPC + BM0
   Front block: FBOTPC, FTOPPC + FM0 (legacy JSON key M0)
   Stitch: STV (sole inter-block via)
+  Split gate: MDI at center seam (BTOPPC/FBOTPC, co-located with STV)
 """
 
 from src.cellgen.archit.CFET.tech import CFET_Tech
@@ -87,6 +88,10 @@ class CFFET_Tech(CFET_Tech):
 
     def get_stitch_via_name(self) -> str:
         return "STV"
+
+    def get_mdi_name(self) -> str:
+        """Middle Dielectric Isolation marker at the CFFET center seam."""
+        return "MDI"
 
     def get_m0icpd_fine_route_metals(self) -> list[str]:
         return [self.get_front_route_metal(), "BM0"]

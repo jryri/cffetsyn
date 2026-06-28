@@ -106,6 +106,15 @@
         "gds_layer": 5003,
         "gds_datatype": 0
     },
+    "MDI": {
+        "layer_type": "gds",
+        "layer_name": "MDI",
+        "lower_layer": "BTOPPC",
+        "upper_layer": "FBOTPC",
+        "info": "Middle Dielectric Isolation at CFFET center seam (BTOPPC lower, FBOTPC upper; co-located with STV)",
+        "gds_layer": 5004,
+        "gds_datatype": 0
+    },
     "FBOTPC": {
         "layer_type": "metal",
         "layer_number": 10,

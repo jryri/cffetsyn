@@ -78,6 +78,7 @@ def write_cffet_result(
     cpp_cost,
     filename,
     lgg=None,
+    mdi_at_col_vars=None,
 ):
     """
     Dump CFFET solve with an explicit placement tier (Z) column per transistor.
@@ -148,6 +149,24 @@ def write_cffet_result(
         f.write("-" * (sum(col_widths) + 2 * (len(col_widths) - 1)) + "\n")
         for row in placement_rows:
             f.write(fmt.format(*row))
+
+        if mdi_at_col_vars and lgg is not None:
+            plc_layer = c_tech.get_domain_placement_layer()
+            mdi_rows = []
+            for ci, var in mdi_at_col_vars.items():
+                if solver.Value(var) == 1:
+                    gate_col = lgg.col_in_layer(plc_layer, ci + 1)
+                    mdi_rows.append((str(ci), str(gate_col), "MDI"))
+            if mdi_rows:
+                f.write("\n** MDI Split-Gate **\n")
+                mdi_hdr = ("DeviceCol", "GateCol", "Tag")
+                mdi_cols = list(zip(mdi_hdr, *mdi_rows))
+                mdi_w = [max(len(str(x)) for x in col) for col in mdi_cols]
+                mdi_fmt = "  ".join(f"{{:>{w}}}" for w in mdi_w) + "\n"
+                f.write(mdi_fmt.format(*mdi_hdr))
+                f.write("-" * (sum(mdi_w) + 2 * (len(mdi_w) - 1)) + "\n")
+                for row in mdi_rows:
+                    f.write(mdi_fmt.format(*row))
 
         f.write("\n** Cell Information **\n")
         f.write("IO Pins\n")

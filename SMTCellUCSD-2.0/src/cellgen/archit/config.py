@@ -509,6 +509,14 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
                 "value": False,
                 "info": "[CFFET] CFET col-aggregate PC DB routing ban (incompatible with dual-face M0/BM0).",
             }
+            config_template["enable_mdi_split_gate"] = {
+                "value": True,
+                "info": "[CFFET] Create mdi_at_col markers and detect TG split-gate pairs.",
+            }
+            config_template["enforce_mdi_split_gate"] = {
+                "value": False,
+                "info": "[CFFET] Hard-enforce MDI split-gate placement for complementary TG pairs.",
+            }
             config_template["cfet_cross_device_via_lb"] = {
                 "value": False,
                 "info": "[CFFET] CFET canonical-layer cross-device via LB (wrong for dual-face z).",
@@ -516,6 +524,16 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
             if "MUX2" in cir or "MUX4" in cir:
                 # MUX2 12T mesh needs wider canvas for dual-face M0/BM0 IO routing
                 # (num_col=23 = insert_num_db 4; default 17 is routing-INFEASIBLE).
+                config_template["insert_num_db"]["value"] = max(
+                    config_template["insert_num_db"]["value"], 4
+                )
+            elif "LHQ" in cir or "LAT" in cir:
+                # Latch cells: dual-face IO routing needs extra diffusion breaks.
+                config_template["insert_num_db"]["value"] = max(
+                    config_template["insert_num_db"]["value"], 4
+                )
+            elif "DFF" in cir:
+                # Flip-flops: wider canvas for clock/data/reset pin routing.
                 config_template["insert_num_db"]["value"] = max(
                     config_template["insert_num_db"]["value"], 4
                 )

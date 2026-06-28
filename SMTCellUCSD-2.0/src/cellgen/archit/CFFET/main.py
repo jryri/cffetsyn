@@ -29,7 +29,8 @@ Scope C:
         device's three pins never straddle the seam. ``placed_tran_at_xzi_vars``
         (tran, ci, zi) slot reifiers and per-block diffusion alignment
         (FBOTPC<->FTOPPC, BBOTPC<->BTOPPC) mirror the QFET tier machinery.
-  - P4  AtMostOne FMIV/BMIV per column; AtMostOne STV per column; dual
+  - P4  AtMostOne FMIV/BMIV per column; AtMostOne STV per column; MDI split-gate
+        markers (``mdi_split_gate``) at seam columns; dual
         ``_ban_signal_on_power_rows`` (inherited, driven by tech layer queries).
   - P5  Cross-face GM/DM/FDM merge (``cross_face_merge``) + at-least-one obligation.
   - P6/P6b  Dual-face ``pin_face`` policy. Inputs are single-face (round-robin
@@ -56,6 +57,7 @@ from src.cellgen.archit.CFFET.inter_row_merge import (
     pairwise_inter_row_merge,
     enforce_inter_row_merge_obligation,
 )
+from src.cellgen.archit.CFFET.mdi_split_gate import enforce_mdi_split_gate
 from src.cellgen.core.entity import Model
 from src.cellgen.core.variable import TransistorVar
 from src.cellgen.core.util import log_variable_info
@@ -80,6 +82,7 @@ class CFFET(CFET):
             self.net_arc_vars, self.c_tech, self.cpp_cost,
             filename=res_path,
             lgg=self.lgg,
+            mdi_at_col_vars=getattr(self, "mdi_at_col_vars", None),
         )
         from src.cellgen.postprocess.visualize_CFFET_4T import (
             draw_cffet_layout,
@@ -642,6 +645,8 @@ class CFFET(CFET):
             self.cell_config["m0_pin_extension"]["value"] = False
         super()._routing_constraints()
         self._only_one_stv_per_col()
+        self._only_one_mdi_per_col()
+        enforce_mdi_split_gate(self)
         if self._cfg_get("enable_cross_face_merge", True) and self._cfg_get(
             "enforce_cross_face_merge", True
         ):
@@ -718,6 +723,33 @@ class CFFET(CFET):
             if evars:
                 self.opt.Add(sum(evars) <= 1)
 
+    def _only_one_mdi_per_col(self):
+        """AtMostOne MDI marker per column when MDI has LGG via edges."""
+        mdi = self.c_tech.get_mdi_name()
+        if mdi is None:
+            return
+        bot_name, top_name = "BTOPPC", "FBOTPC"
+        stack = getattr(self.c_tech, "layer_stack", None)
+        if stack is None:
+            return
+        via_key = (bot_name, top_name)
+        via_obj = stack.via_layers.get(via_key)
+        if via_obj is None or via_obj.layer_name != mdi:
+            return
+        self.opt.log_comment(f"At most one MDI ({bot_name} to {top_name}) per column")
+        try:
+            bot_idx = self.lgg.layer_index(bot_name)
+            top_idx = self.lgg.layer_index(top_name)
+        except KeyError:
+            return
+        mdi_edges_by_col = defaultdict(list)
+        for (u, v), evar in self.edge_vars.items():
+            if {u[0], v[0]} == {bot_idx, top_idx}:
+                mdi_edges_by_col[u[2]].append(evar)
+        for col, evars in mdi_edges_by_col.items():
+            if evars:
+                self.opt.Add(sum(evars) <= 1)
+
     # ================================================================== #
     # P6b — dual-face pin policy                                         #
     #   inputs : single-face SON (round-robin FIN/BIN over CDL order)    #
@@ -769,7 +801,9 @@ class CFFET(CFET):
         if cfg:
             assignment_mode = (cfg.get("input", {}) or {}).get("assignment", "round_robin")
         subckt = self.circuit.subckt_name
-        if assignment_mode == "round_robin" and subckt.startswith(("AOI", "OAI", "MUX")):
+        if assignment_mode == "round_robin" and subckt.startswith(
+            ("AOI", "OAI", "MUX", "LHQ", "LAT", "DFF")
+        ):
             assignment_mode = "same_face"
         if assignment_mode == "same_face":
             explicit = {}
