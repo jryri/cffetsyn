@@ -70,40 +70,84 @@ Dual-sided cells connect nets through **merge structures**, not “draw a wire a
 
 **DS-net:** net whose devices/pins span **both** FS and BS (`FM0` and `BM0`). Requires **≥1 merge** among {GM, DM, FDM} when cross-face pairs exist (`enforce_cross_face_merge`).
 
-## CFET vs CFFET: How Pass Gates (TG) Connect
+## Transmission Gate (TG) — strict definition
 
-**Neither flow has a “TG macro”.** Both start from CDL (e.g. `MUX2_X1` transmission-gate netlist).
+**Do not confuse TG with MUX pass pairs or with “both gates tied to S”.**
 
-### CFET (`CFET_3T_SH`) — single front stack
+| | **TG (Transmission Gate)** | **MUX pass leg** (e.g. `MUX2_X1` MM8+MM3) |
+|--|---------------------------|---------------------------------------------|
+| Topology | NMOS ∥ PMOS, same A↔B channel | Same |
+| NMOS gate | **S** | Often **S** (same net as PMOS) |
+| PMOS gate | **S̄** (NOT S) | Often **S** (not S̄) |
+| Control | Complementary **gate** drives | Complementary **device type** + one wire |
+| Textbook | Yes | Implementation shortcut, **not strict TG** |
 
-- PMOS @ `PC` (`FTOPPC`), NMOS @ `BPC` (`FBOTPC`); **no `z_var`** — tier = device type.
-- N+P sharing a pass **channel net** → **`pairwise_lisd_sharing`** (cross-MOS LISD): same **x**, correct flip, connects PC↔BPC.
-- Intra-column vertical tie → **MIV** (BPC↔PC) in CFET vocabulary.
-- This is the classic **vertical complementary pass gate** in one column.
+Strict TG truth table: S=1 → N on P off; S=0 → N off P on. Requires **two gate nets** on the pass pair.
 
-### CFFET (`CFFET_3T_SH`) — dual block, four tiers
+## Gate modes: CG vs SG (same column)
 
-- Each device has **`z_var` ∈ {BBOTPC, BTOPPC, FBOTPC, FTOPPC}**; PMOS/NMOS each may land on **front or back block**.
-- Generic **`pairwise_lisd_sharing` requires `z_eq` (same tier)** → **N@FBOTPC + P@FTOPPC do NOT LISD-share** (different tiers by design).
-- Intra-block N+P pass junction → **`FMIV` / `BMIV`** (vertical tie **within** one CFET block) **+** routing on `FM0`/`BM0`, **not** planar LISD.
-- If pass devices split across **faces** → **DM/GM/FDM** obligation + **STV** path.
-- Multi-row MUX/TG meshes → **IRMD/IRGM** (ASPDAC inter-row MD/gate).
+| Mode | Same column N+P | Gate nets | CFET `CFET_3T_SH` | CFFET solver today |
+|------|-----------------|-----------|-------------------|---------------------|
+| **CG** (common gate) | Yes | N and P share **one** gate net | Default; `gate_share` → same x | Same |
+| **SG** (split gate) | Yes | N gate **≠** P gate (S vs S̄) | **Not modeled** — needs F3ET-style independent gate metals | **Not modeled** |
 
-### “Short top S/D so CFFET → FFET and draw TG perfectly” — corrected
+**Iron rule:** `gate_share` in SMTCell only fires when both devices share the **same gate net** → enforces **CG**, forbids strict TG on one CG column.
 
-| Wrong mental model | Correct model |
-|--------------------|---------------|
-| CFFET “degenerates to FFET” by shorting | **FFET is the parent process**; **CFFET adds** a second back-to-back CFET stack (4-tier). |
-| Arbitrary S/D short | Legal vertical tie is **`FMIV`/`BMIV`** (intra-block) or **DM/IRMD** (merge rules), not a new hack. |
-| Same as CFET LISD | Only if you **restrict placement** to **one block** (e.g. all `F*` tiers) **and** route through **FMIV** like CFET MIV — still CFFET rules, simpler sub-case. |
-| Disable dual-face = solved | Front-only helps (MUX2 often uses front only) but **routing mesh + merge obligations** still apply. |
+**Gate cut** = different gate nets on **different gate columns** (S column vs S̄ column). Valid strict TG, but **not single gate column**.
 
-**Practical TG-friendly policy (future DTCO, not default today):**
+## Single-column CFFET strict TG — design space
 
-1. Bind pass-pair devices to **same face, same x**, N on `*BOTPC`, P on `*TOPPC`.
-2. Treat **FMIV/BMIV** as mandatory channel merge for shared S/D nets (CFET-analog).
-3. Keep gates on **IRGM** or aligned **gate sharing**; complementary gates stay **separate nets** (`S` / `!S`).
-4. Avoid cross-face on pass nets → no FDM/STV on TG internal nets.
+Target: one CPP column, one face, A↔B bidirectional pass.
+
+```
+        A o──────── channel net ────────o B
+              FTOPPC  PMOS   gate = S̄
+                 ║ FMIV  (channel vertical tie)
+              FBOTPC  NMOS   gate = S
+              same device column x
+```
+
+### What single column always needs (channel)
+
+| Item | Rule |
+|------|------|
+| Face | N and P on **same** face (front `F*` or back `B*`) — no STV on pass channel |
+| x | Same device column |
+| z | N @ `*BOTPC`, P @ `*TOPPC` |
+| Channel | **`FMIV`** (front) or **`BMIV`** (back) on shared S/D net — legal vertical tie, not arbitrary metal short |
+
+### Strict TG gates — two implementation paths
+
+**Path A — Two gate columns (no SG)**  
+- gate(N)=S on gate col α, gate(P)=S̄ on gate col β, α≠β  
+- Channel still one device column + FMIV  
+- Matches current solver (no SG); **not single gate column**
+
+**Path B — Single gate column + SG (process)**  
+- gate(N)=S, gate(P)=S̄ on **same device column**, independent gate metals (F3ET **SG** class)  
+- Requires **SG DRC + solver vars** — **not** in repo today  
+- **CG `gate_share` must NOT** bind S and S̄ to same x gate net
+
+### Process hypothesis: outer S/D short → inner SG (DTCO discussion)
+
+Some FFET flows tie or strap **outer** diffusion endpoints (e.g. upper/lower stack ends) so the **middle active N/P pair** can receive **independent gate contacts (SG)** while staying one fin column. That is a **fabrication / strap rule**, not something the current CP-SAT model exposes.
+
+Before coding: specify **which diffusion nodes are shorted** (to each other vs to rail vs through FMIV only) and verify with process team that SG masks are legal on that column.
+
+**Do not conflate:** FMIV channel tie (enables parallel A↔B) **≠** SG (enables S vs S̄ on same column).
+
+## CFET vs CFFET pass connectivity (solver)
+
+### CFET — single front stack, CG pass legs
+
+- PMOS @ `PC`, NMOS @ `BPC`; channel → **LISD** + **MIV**.
+- Strict TG on **one CG column** is **impossible** (need S and S̄) unless **two gate columns** or SG process outside model.
+
+### CFFET — four tiers, front/back choice
+
+- Channel @ same x → **FMIV/BMIV**, not LISD (`z_eq` fails across BOT/TOP).
+- Strict TG: Path A (two gate cols) or Path B (SG + process short/straps).
+- MUX2 CDL pass legs (both gates `S`) are **not** strict TG — do not use them to validate TG flow.
 
 ## SMTCell Preset ↔ Paper Mapping
 
@@ -125,6 +169,9 @@ Dual-sided cells connect nets through **merge structures**, not “draw a wire a
 | “FFET = simplified CFFET” | **Opposite:** CFFET extends FFET to 4-tier |
 | “BOT tier = back face” | `FBOTPC` = front **Bottom** tier; back face = **`B*`** prefix (`BBOTPC`, `BM0`) |
 | “TG uses same LISD as CFET in CFFET” | N+P on `FBOTPC`+`FTOPPC` → **FMIV vertical path**, not same-tier LISD |
+| “MUX pass (both gates S) = TG” | Strict TG needs **gate(N)=S, gate(P)=S̄** |
+| “Single-column TG = same gate column with CG” | **Impossible** for strict TG; need **SG** or **two gate columns** |
+| “FMIV short = SG” | FMIV = **channel** tie only; SG = **separate gate metals** |
 | `enable_routing=false` = two-step P&R | **Diagnostic only** — one CP-SAT model with routing constraints stripped |
 | Confusing **row** (M0 track) with **tier** (PC layer) | See `cffet-layer-nomenclature` axis table |
 
