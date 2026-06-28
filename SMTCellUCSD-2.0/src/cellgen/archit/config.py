@@ -517,6 +517,10 @@ def generate_config(track, tech, height_config, circuit_names, output_dir,
                 "value": False,
                 "info": "[CFFET] Hard-enforce MDI split-gate (opt-in; logic cells may have non-TG pairs).",
             }
+            config_template["force_single_cpp_column"] = {
+                "value": False,
+                "info": "[CFFET] Lock all devices to one CPP column (4-tier z stacking).",
+            }
             config_template["cfet_cross_device_via_lb"] = {
                 "value": False,
                 "info": "[CFFET] CFET canonical-layer cross-device via LB (wrong for dual-face z).",

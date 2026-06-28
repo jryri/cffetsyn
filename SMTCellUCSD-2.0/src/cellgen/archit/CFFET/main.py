@@ -315,7 +315,10 @@ class CFFET(CFET):
         num_pmos = self.circuit.num_pmos_transistors()
         num_nmos = self.circuit.num_nmos_transistors()
         num_y_rows = max(1, len(self.nmos_placeable_row_indices))
-        per_row = -(-max(num_pmos, num_nmos) // num_y_rows)
+        if self._cfg_get("force_single_cpp_column", False):
+            per_row = 1
+        else:
+            per_row = -(-max(num_pmos, num_nmos) // num_y_rows)
         if per_row > 0:
             sorted_plc_ci = sorted(self.plc_ci)
             if per_row <= len(sorted_plc_ci):
@@ -604,8 +607,26 @@ class CFFET(CFET):
                 self.opt.Add(unified == 0).OnlyEnforceIf([ndb.Not(), pdb.Not()])
                 self.db_vars[(ci, bot_zi)] = unified
 
+    def _force_single_cpp_column(self):
+        """Hard-lock every device to the leftmost MOS-placable column."""
+        if not self._cfg_get("force_single_cpp_column", False):
+            return
+        ci = min(self.plc_ci)
+        self.opt.log_comment(f"CFFET force single CPP column (ci={ci})")
+        for tran in self.circuit.transistors.values():
+            self.opt.Add(self.transistor_vars[tran.name].x_var == ci)
+        self.opt.Add(self.cpp_cost == ci)
+        # One device per (column, tier) slot when stacked into a single column.
+        for zi in self.plc_zi:
+            slot_vars = [
+                self.placed_tran_at_xzi_vars[(t.name, ci, zi)]
+                for t in self.circuit.transistors.values()
+            ]
+            self.opt.Add(sum(slot_vars) <= 1)
+
     def _placement_constraints(self):
         """CFET placement + cross-face (v2) + inter-row (v3) merge vars."""
+        self._force_single_cpp_column()
         super()._placement_constraints()
         if self._cfg_get("enable_cross_face_merge", True):
             pairwise_cross_face_merge(self)
