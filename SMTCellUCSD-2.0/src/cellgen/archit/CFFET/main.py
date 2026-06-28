@@ -149,7 +149,7 @@ class CFFET(CFET):
 
         if (
             self.c_tech.height_config == "SH"
-            and self.c_tech.num_rt_track == 3
+            and self.c_tech.num_rt_track in (3, 4)
             and len(getattr(self, "nmos_placeable_row_indices", [])) > 1
         ):
             rows = self.nmos_placeable_row_indices
@@ -226,19 +226,24 @@ class CFFET(CFET):
         )
 
     def _init_tech(self):
-        """CFET tech + CFFET: allow placement on M0ICPD signal rows (not y=0 only)."""
+        """CFET tech + CFFET: M0ICPD signal rows for placement and pin access."""
         super()._init_tech()
         if (
             self.c_tech.height_config == "SH"
-            and self.c_tech.num_rt_track == 3
-            and hasattr(self, "signal_row_indices")
+            and self.c_tech.power_config == "M0ICPD"
+            and self.c_tech.num_rt_track in (3, 4)
         ):
-            rows = list(self.signal_row_indices)
+            last_ri = self.c_tech.num_rt_track * 2 - 1
+            rows = list(range(1, last_ri))
+            self.signal_row_indices = rows
+            self.power_row_indices = {0: "VSS", last_ri: "VDD"}
             self.nmos_placeable_row_indices = rows
             self.pmos_placeable_row_indices = rows
+            self.nmos_pin_access_ri = list(rows)
+            self.pmos_pin_access_ri = list(rows)
             logger.info(
-                f"\t==\t[CFFET] relaxed placement y rows: {rows} "
-                f"(was CFET single-row [0])"
+                f"\t==\t[CFFET] M0ICPD TRACK={self.c_tech.num_rt_track}: "
+                f"power rows {self.power_row_indices}, signal rows {rows}"
             )
 
     def _multi_row_placement_enabled(self) -> bool:

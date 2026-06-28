@@ -36,6 +36,10 @@ class CFFET_Tech(CFET_Tech):
         kwargs.setdefault("default_placement_layer", "FTOPPC")
         super().__init__(*args, **kwargs)
         self.TECHNOLOGY = "CFFET"
+        # CFFET always uses M0ICPD on FM0+BM0 (0.5T VDD + signal + 0.5T VSS),
+        # including TRACK=4 — unlike planar CFET which switches to M0BPR at 4T.
+        if self.num_rt_track in (3, 4):
+            self.power_config = "M0ICPD"
 
     def get_top_placement_layer(self) -> str:
         return "FTOPPC"
@@ -109,9 +113,9 @@ class CFFET_Tech(CFET_Tech):
     def _validate_height_config(self, height_config, num_rt_track, num_sites) -> int:
         if height_config != "SH":
             raise NotImplementedError(f"CFFET supports SH only (got {height_config!r})")
-        if num_rt_track != 3:
+        if num_rt_track not in (3, 4):
             raise NotImplementedError(
-                f"CFFET v1 supports TRACK=3 M0ICPD only (got {num_rt_track})"
+                f"CFFET supports TRACK=3 or 4 M0ICPD (got {num_rt_track})"
             )
         assert num_sites == 1
         return num_sites
