@@ -1032,6 +1032,54 @@ def prohibit_multiple_SONs_same_column(instance):
                 instance.opt.Add(sum(tmp) <= 1)
 
 
+def _gather_cross_face_shareable_vars(instance, net_name, t1, t2, pin1, pin2):
+    """Cross-face GM / DM / FDM vars for routing flow sharing."""
+    out = []
+    if pin1 == "gate" and pin2 == "gate":
+        for key in (
+            f"gm_cf_{t1}_{t2}_{net_name}",
+            f"gm_cf_{t2}_{t1}_{net_name}",
+        ):
+            if key in getattr(instance, "gm_cf_pair_vars", {}):
+                out.append(instance.gm_cf_pair_vars[key])
+        return out
+    if pin1 == "gate" or pin2 == "gate":
+        return []
+    for prefix, attr in (("dm_cf", "dm_cf_pair_vars"), ("fdm", "fdm_pair_vars")):
+        store = getattr(instance, attr, {})
+        for key in (
+            f"{prefix}_{t1}_{t2}_{net_name}",
+            f"{prefix}_{t2}_{t1}_{net_name}",
+        ):
+            if key in store:
+                out.append(store[key])
+    return out
+
+
+def _gather_inter_row_shareable_vars(instance, net_name, t1, t2, pin1, pin2):
+    """Inter-row IRGM / IRMD vars for routing flow sharing (CFFET multi-row)."""
+    out = []
+    if pin1 == "gate" and pin2 == "gate":
+        store = getattr(instance, "irgm_pair_vars", {})
+        for key in (
+            f"irgm_{t1}_{t2}_{net_name}",
+            f"irgm_{t2}_{t1}_{net_name}",
+        ):
+            if key in store:
+                out.append(store[key])
+        return out
+    if pin1 == "gate" or pin2 == "gate":
+        return []
+    store = getattr(instance, "irmd_pair_vars", {})
+    for key in (
+        f"irmd_{t1}_{t2}_{net_name}",
+        f"irmd_{t2}_{t1}_{net_name}",
+    ):
+        if key in store:
+            out.append(store[key])
+    return out
+
+
 def _gather_ds_shareable_vars(instance, net_name, t1, t2, pin1, pin2):
     """ds (drain/source) pair vars shareable between t1 and t2 for `net_name`.
 
@@ -1097,6 +1145,10 @@ def _induce_int_flow_conservation(instance, net):
             instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
         k_shareable_vars.extend(_gather_gate_shareable_vars(
             instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
+        k_shareable_vars.extend(_gather_cross_face_shareable_vars(
+            instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
+        k_shareable_vars.extend(_gather_inter_row_shareable_vars(
+            instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
         for k_prev in range(k):
             prev_tran, prev_pin = net.terminals()[k_prev]
             k_shareable_vars.extend(_gather_ds_shareable_vars(
@@ -1104,6 +1156,10 @@ def _induce_int_flow_conservation(instance, net):
             k_shareable_vars.extend(_gather_lisd_shareable_vars(
                 instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
             k_shareable_vars.extend(_gather_gate_shareable_vars(
+                instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
+            k_shareable_vars.extend(_gather_cross_face_shareable_vars(
+                instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
+            k_shareable_vars.extend(_gather_inter_row_shareable_vars(
                 instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
         is_shared = instance.opt.NewBoolVar(f"shared_{net.name}_{k}")
         if k_shareable_vars:
@@ -1223,6 +1279,10 @@ def induce_internal_routing_flow_with_diffusion(instance):
                 instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
             k_shareable.extend(_gather_gate_shareable_vars(
                 instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
+            k_shareable.extend(_gather_cross_face_shareable_vars(
+                instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
+            k_shareable.extend(_gather_inter_row_shareable_vars(
+                instance, net.name, src_tran_name, term_tran_name, src_pin, term_pin))
             for k_prev in range(k):
                 prev_tran, prev_pin = net.terminals()[k_prev]
                 k_shareable.extend(_gather_ds_shareable_vars(
@@ -1231,6 +1291,10 @@ def induce_internal_routing_flow_with_diffusion(instance):
                     instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
                 k_shareable.extend(_gather_gate_shareable_vars(
                     instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
+                k_shareable.extend(_gather_cross_face_shareable_vars(
+                    instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
+                k_shareable.extend(_gather_inter_row_shareable_vars(
+                    instance, net.name, prev_tran, term_tran_name, prev_pin, term_pin))
 
             is_shared = instance.opt.NewBoolVar(f"shared_{net.name}_{k}")
             if k_shareable:
@@ -1238,6 +1302,9 @@ def induce_internal_routing_flow_with_diffusion(instance):
                 instance.opt.Add(sum(k_shareable) == 0).OnlyEnforceIf(is_shared.Not())
             else:
                 instance.opt.Add(is_shared == 0)
+            _ntis = getattr(instance, "net_terminal_is_shared", None)
+            if isinstance(_ntis, dict):
+                _ntis[(net.name, k)] = is_shared
 
             for node in instance.lgg.nodes():
                 in_flows = sum(
@@ -1806,10 +1873,14 @@ def _get_net_reachable_layers_cfet(cfet, net):
     """
     pmos_layer_idx = cfet.lgg.layer_index(cfet.pmos_layer)
     nmos_layer_idx = cfet.lgg.layer_index(cfet.nmos_layer)
-    # routing layers (M0, M1, M2) are always reachable
+    # routing layers (M0, M1, M2) are always reachable; placement tiers are not
+    # (a net only reaches the tier(s) carrying its connected devices). Use the
+    # tech-declared placement layers so CFFET's 4 tiers (BBOTPC/BTOPPC/FBOTPC/
+    # FTOPPC) are excluded here, not just CFET's literal BPC/PC.
+    placement_layers = set(cfet.c_tech.get_placement_layers())
     reachable = set()
     for layer_name in cfet.lgg.idx_to_layer.values():
-        if layer_name not in ("BPC", "PC"):
+        if layer_name not in placement_layers:
             reachable.add(cfet.lgg.layer_index(layer_name))
     # check which device types this net touches
     has_pmos = False
@@ -1824,6 +1895,18 @@ def _get_net_reachable_layers_cfet(cfet, net):
         reachable.add(pmos_layer_idx)
     if has_nmos:
         reachable.add(nmos_layer_idx)
+    # CFFET dual-face (uses_tier_placement): a device may land on EITHER face
+    # (P3b) and outputs route to BOTH route metals M0/BM0 (P6b), so a net may
+    # legitimately traverse any placement tier (e.g. the back-block descent
+    # FBOTPC -> STV -> BTOPPC -> BMIV -> BBOTPC -> BM0). Do not prune placement
+    # tiers in that case - keep every tier reachable so the cross-face path is
+    # available. (The per-net pruning is a speedup for single-face CFET only.)
+    if getattr(cfet, "uses_tier_placement", False):
+        for layer_name in placement_layers:
+            try:
+                reachable.add(cfet.lgg.layer_index(layer_name))
+            except KeyError:
+                pass
     return reachable
 
 
@@ -1836,16 +1919,19 @@ def routing_localization_cfet(cfet):
     Args:
         cfet: The CFET instance
     """
+    # Canonical placement tier (CFET: "PC"; CFFET: "FTOPPC"). All placement
+    # tiers share the same column grid, so one tier's cols serve as the domain.
+    plc = cfet.c_tech.get_domain_placement_layer()
     # Unified column/row domains across all routing-relevant layers
     all_cols = list(sorted(set(
-        cfet.lgg.cols_in_layer("PC") + cfet.lgg.cols_in_layer("M1")
+        cfet.lgg.cols_in_layer(plc) + cfet.lgg.cols_in_layer("M1")
     )))
     all_rows = list(sorted(set(
-        cfet.lgg.rows_in_layer("PC") + cfet.lgg.rows_in_layer("M1")
+        cfet.lgg.rows_in_layer(plc) + cfet.lgg.rows_in_layer("M1")
     )))
     all_cols_domain = cp_model.Domain.FromValues(all_cols)
     all_rows_domain = cp_model.Domain.FromValues(all_rows)
-    pc_cols_domain = cp_model.Domain.FromValues(cfet.lgg.cols_in_layer("PC"))
+    pc_cols_domain = cp_model.Domain.FromValues(cfet.lgg.cols_in_layer(plc))
 
     # Pre-compute reachable layers per net and banned arcs
     net_reachable_layers = {}
@@ -1967,8 +2053,8 @@ def routing_localization_cfet(cfet):
         cfet.opt.AddMaxEquality(cfet.net_max_y[net.name], all_y_coords_for_net)
 
     # Wirelength lower bound based on bounding box half-perimeters (HPWL)
-    pitch_x = int(cfet.tech.get_pitch("PC"))
-    pitch_y = int(cfet.tech.get_pitch("M0"))
+    pitch_x = int(cfet.tech.get_pitch(plc))
+    pitch_y = int(cfet.tech.get_pitch(cfet.c_tech.get_front_route_metal()))
     scaled_hpwl_sum = []
     for net in cfet.circuit.get_nets(with_power_ground=False):
         scaled_hpwl_sum.append((cfet.net_max_x[net.name] - cfet.net_min_x[net.name]) * pitch_y)
@@ -1980,8 +2066,8 @@ def routing_localization_cfet(cfet):
     # if tolerance is set
     if cfet.routing_tolerance != -1:
         cfet.opt.log_comment(f"Enforcing routing window constraints {cfet.routing_tolerance} ...")
-        max_col = (cfet.cpp_cost + (_NUM_COL_SDG_ - 1)) * int(cfet.tech.get_pitch("PC"))
-        max_row = (cfet.tech.num_rt_track - 1) * int(cfet.tech.get_pitch("M0")) * 2
+        max_col = (cfet.cpp_cost + (_NUM_COL_SDG_ - 1)) * int(cfet.tech.get_pitch(plc))
+        max_row = (cfet.tech.num_rt_track - 1) * int(cfet.tech.get_pitch(cfet.c_tech.get_front_route_metal())) * 2
         logger.info(f"\t==\tEnforcing max row and col for routing window to {max_row} and {max_col} ...")
         for net in cfet.circuit.get_nets(with_power_ground=False):
             banned = net_banned_arcs[net.name]
@@ -1989,7 +2075,7 @@ def routing_localization_cfet(cfet):
             # 3. Define routing window boundaries with clamping
             unclamped_xmin = cfet.opt.NewIntVar(
                 -cfet.routing_tolerance,
-                cfet.lgg.max_col_in_layer("PC") + cfet.lgg.max_col_in_layer("M1"),
+                cfet.lgg.max_col_in_layer(plc) + cfet.lgg.max_col_in_layer("M1"),
                 f"unclamped_xmin_{net.name}"
             )
             cfet.opt.Add(unclamped_xmin == cfet.net_min_x[net.name] - cfet.routing_tolerance)
@@ -1997,7 +2083,7 @@ def routing_localization_cfet(cfet):
 
             unclamped_xmax = cfet.opt.NewIntVar(
                 0,
-                cfet.lgg.max_col_in_layer("PC") + cfet.lgg.max_col_in_layer("M1") + cfet.routing_tolerance,
+                cfet.lgg.max_col_in_layer(plc) + cfet.lgg.max_col_in_layer("M1") + cfet.routing_tolerance,
                 f"unclamped_xmax_{net.name}"
             )
             cfet.opt.Add(unclamped_xmax == cfet.net_max_x[net.name] + cfet.routing_tolerance)
@@ -2005,7 +2091,7 @@ def routing_localization_cfet(cfet):
 
             unclamped_ymin = cfet.opt.NewIntVar(
                 -cfet.routing_tolerance,
-                cfet.lgg.max_row_in_layer("PC") + cfet.lgg.max_row_in_layer("M1"),
+                cfet.lgg.max_row_in_layer(plc) + cfet.lgg.max_row_in_layer("M1"),
                 f"unclamped_ymin_{net.name}"
             )
             cfet.opt.Add(unclamped_ymin == cfet.net_min_y[net.name] - cfet.routing_tolerance)
@@ -2013,7 +2099,7 @@ def routing_localization_cfet(cfet):
 
             unclamped_ymax = cfet.opt.NewIntVar(
                 0,
-                cfet.lgg.max_row_in_layer("PC") + cfet.lgg.max_row_in_layer("M1") + cfet.routing_tolerance,
+                cfet.lgg.max_row_in_layer(plc) + cfet.lgg.max_row_in_layer("M1") + cfet.routing_tolerance,
                 f"unclamped_ymax_{net.name}"
             )
             cfet.opt.Add(unclamped_ymax == cfet.net_max_y[net.name] + cfet.routing_tolerance)

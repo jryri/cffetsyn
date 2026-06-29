@@ -190,6 +190,50 @@ class CFET_Tech:
         return self.get_top_placement_layer()
 
     # ---------------------------------------------------------------------- #
+    # stack / routing queries (shared CFET + CFFET)                          #
+    # ---------------------------------------------------------------------- #
+
+    def get_front_route_metal(self) -> str:
+        """Primary horizontal routing metal on the front face (legacy JSON key M0)."""
+        return "M0"
+
+    def get_back_route_metals(self) -> list[str]:
+        """Back-face horizontal routing metals. Empty for single-face CFET."""
+        return []
+
+    def get_route_metals_for_power_row_ban(self) -> list[str]:
+        """Layers subject to M0ICPD top-view power-row signal ban."""
+        layers = [self.get_front_route_metal()]
+        layers.extend(self.get_placement_layers())
+        return layers
+
+    def get_virtual_connect_pairs(self) -> list[tuple[str, str]]:
+        """Virtual overlap/boundary connect pairs (bottom tier → front route metal)."""
+        return [
+            (self.get_bottom_placement_layer(), self.get_front_route_metal()),
+        ]
+
+    def get_intra_block_miv_pair(self) -> tuple[str, str]:
+        """Bottom/top placement layers connected by intra-block MIV."""
+        return (self.get_bottom_placement_layer(), self.get_top_placement_layer())
+
+    def get_stitch_via_name(self) -> str | None:
+        """Inter-block stitch via layer name, or None for single-block CFET."""
+        return None
+
+    def get_canvas_height(self) -> float:
+        """Cell canvas height derived from track count and front M0 pitch."""
+        return self.num_rt_track * self.get_pitch(self.get_front_route_metal()) * 2
+
+    def get_m0icpd_fine_route_metals(self) -> list[str]:
+        """Horizontal metals using fine M0 pitch under M0ICPD (not doubled)."""
+        return [self.get_front_route_metal()]
+
+    def get_domain_placement_layer(self) -> str:
+        """Canonical placement layer for col/row domain (default_placement_layer)."""
+        return self.default_placement_layer
+
+    # ---------------------------------------------------------------------- #
     # validation                                                             #
     # ---------------------------------------------------------------------- #
 

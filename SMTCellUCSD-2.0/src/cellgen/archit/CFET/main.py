@@ -298,9 +298,11 @@ class CFET:
         self._placement_constraints()
         # ^ Placement Injection - config values are physical coords (from .res
         # files); x_var uses column indices, so divide by PC pitch to convert.
-        pc_pitch = self.c_tech.get_pitch(layer_name="PC")
+        pc_pitch = self.c_tech.get_pitch(layer_name=self.c_tech.get_domain_placement_layer())
         for t in self._cfg_get("inject_placement", []):
             inject.inject_placement(self, tran_name=t[0], x=int(t[1] / pc_pitch))
+        if not self._cfg_get("enable_routing", True):
+            return
         self._routing_constraints()
 
     def _maybe_inject_clusters(self):
@@ -475,6 +477,11 @@ class CFET:
     def _init_tech(self):
         """Cache technology-derived state: finger counts, placement/pin-access rows, device layers."""
         logger.info("Initializing technology configuration...")
+        # Canonical placement-tier name used for the (shared) column/row grid.
+        # CFET: "PC"; subclasses (CFFET) override get_domain_placement_layer to
+        # return their own canonical tier (e.g. "FTOPPC"). All placement tiers
+        # share the same column grid, so one tier serves as the domain layer.
+        self._plc_layer = self.c_tech.get_domain_placement_layer()
         # map transistor to number of fingers
         for tran in self.circuit.transistors.values():
             tran_width = tran.get_width()
@@ -526,7 +533,7 @@ class CFET:
         # by 2 to recover the actual column values. num_col reflects S/D/G columns
         # so no doubling for the col grid.
         self.canvas_width = self.num_col * self.c_tech.layer_stack.metal_layers[0].pitch
-        self.canvas_height = self.c_tech.num_rt_track * self.c_tech.get_pitch("M0") * 2
+        self.canvas_height = self.c_tech.get_canvas_height()
         logger.info(f"\tCanvas width: {self.canvas_width}, Canvas height: {self.canvas_height}")
 
         idx_to_layer = {}
@@ -553,7 +560,7 @@ class CFET:
         for layer in self.c_tech.layer_stack.metal_layers:
             if layer.direction == "V":
                 continue
-            if self.c_tech.power_config == "M0ICPD" and layer.layer_name == "M0":
+            if self.c_tech.power_config == "M0ICPD" and layer.layer_name in self.c_tech.get_m0icpd_fine_route_metals():
                 tmp_pitch = layer.pitch
             else:
                 tmp_pitch = layer.pitch if layer.layer_name in placement_layers else layer.pitch * 2
@@ -565,7 +572,8 @@ class CFET:
         # Top placement layer (directly accessible from M0) gets all M0 rows.
         # Bottom placement layer uses boundary rows by default. For M0ICPD, keep
         # all fine rows so PC/BPC/M0 share top-view row indices.
-        m0_rows = h_layer_rows.get("M0", [])
+        front_metal = self.c_tech.get_front_route_metal()
+        m0_rows = h_layer_rows.get(front_metal, [])
         top_layer = self.c_tech.get_top_placement_layer()
         bottom_layer = self.c_tech.get_bottom_placement_layer()
         if self.c_tech.power_config == "M0ICPD":
@@ -594,7 +602,7 @@ class CFET:
             idx_to_layer=idx_to_layer,
             layer_to_direction=layer_to_direction,
             layer_to_kind=self.c_tech.layer_to_kind,
-            virtual_connect_pairs=[("BPC", "M0")],
+            virtual_connect_pairs=self.c_tech.get_virtual_connect_pairs(),
             virtual_connect_method=vconnect_method,
         )
         self.lgg.stats()
@@ -604,17 +612,18 @@ class CFET:
         logger.debug("Initializing variable domain...")
         # Convention: odd col index = source/drain (placeable), even col index = gate.
         # Use PC layer for the placement domain (same columns for both PC and BPC).
-        self.plc_ci = self.lgg.col_indices_in_layer("PC", parity="odd")[:-1]
+        domain_layer = self.c_tech.get_domain_placement_layer()
+        self.plc_ci = self.lgg.col_indices_in_layer(domain_layer, parity="odd")[:-1]
         self.domain_mos_placable_ci = cp_model.Domain.FromValues(self.plc_ci)
         logger.info(f"Domain MOS placeable col indices: {self.domain_mos_placable_ci}")
-        self.plc_ri = self.lgg.row_indices_in_layer("PC", parity="even")
+        self.plc_ri = self.lgg.row_indices_in_layer(domain_layer, parity="even")
         self.domain_mos_placable_ri = cp_model.Domain.FromValues(self.plc_ri)
         logger.debug(f"Domain MOS placeable row indices: {self.domain_mos_placable_ri}")
         # source/drain/gate col indices
-        self.sd_ci = self.lgg.col_indices_in_layer("PC", parity="odd")
+        self.sd_ci = self.lgg.col_indices_in_layer(domain_layer, parity="odd")
         self.domain_sd_ci = cp_model.Domain.FromValues(self.sd_ci)
         logger.debug(f"Domain SD indices: {self.domain_sd_ci}")
-        self.g_ci = self.lgg.col_indices_in_layer("PC", parity="even")
+        self.g_ci = self.lgg.col_indices_in_layer(domain_layer, parity="even")
         self.domain_g_ci = cp_model.Domain.FromValues(self.g_ci)
         logger.debug(f"Domain G col indices: {self.domain_g_ci}")
         # all col indices in the PC layer
@@ -773,8 +782,8 @@ class CFET:
             self.opt.AddHint(self.cpp_cost, min_cpp_col)
 
     def _init_cell_boundaries(self):
-        self.min_boundary_col = self.lgg.max_col_in_layer("PC") - self.insert_num_db * 2 * self.c_tech.get_pitch("PC")
-        self.max_boundary_col = self.lgg.max_col_in_layer("PC")
+        self.min_boundary_col = self.lgg.max_col_in_layer(self._plc_layer) - self.insert_num_db * 2 * self.c_tech.get_pitch(self._plc_layer)
+        self.max_boundary_col = self.lgg.max_col_in_layer(self._plc_layer)
 
     def _init_diffusion_break_vars(self):
         # NOTE diffusion break should only be inserted in plc columns
@@ -909,8 +918,8 @@ class CFET:
         except Exception:
             top_routing_layer_idx = max(self.lgg.idx_to_layer.keys())
 
-        bpc_idx = self.lgg.layer_index("BPC")
-        m0_idx = self.lgg.layer_index("M0")
+        bpc_idx = self.lgg.layer_index(self.c_tech.get_bottom_placement_layer())
+        m0_idx = self.lgg.layer_index(self.c_tech.get_front_route_metal())
         for u_edge, v_edge in self.lgg.edges():
             edge_var = self.opt.NewBoolVar(f"edge_{u_edge}_{v_edge}")
             self.edge_vars[(u_edge, v_edge)] = edge_var
@@ -1012,11 +1021,11 @@ class CFET:
             source_net, gate_net, drain_net = tran.source, tran.gate, tran.drain
             for ci in self.plc_ci:
                 tran_is_placed_col_var = self.placed_tran_ci_vars.get((tran.name, ci))
-                col = self.lgg.col_in_layer("PC", ci)        # s/d col
+                col = self.lgg.col_in_layer(self._plc_layer, ci)        # s/d col
                 ci_r = ci + 1
-                col_r = self.lgg.col_in_layer("PC", ci_r)    # gate col
+                col_r = self.lgg.col_in_layer(self._plc_layer, ci_r)    # gate col
                 ci_rr = ci + 2
-                col_rr = self.lgg.col_in_layer("PC", ci_rr)  # s/d col
+                col_rr = self.lgg.col_in_layer(self._plc_layer, ci_rr)  # s/d col
                 # ^ if flipped, then source @ col_rr, drain @ col
                 if tran.model == Model.PMOS:
                     nodes_at_s_col = self.gather_nodes_in_pmos_region(col=col_rr)
@@ -1166,8 +1175,8 @@ class CFET:
                     raise ValueError(f"Unknown model: {tran.model}")
                 for ci in self.plc_ci:
                     tran_is_placed_col_var = self.placed_tran_ci_vars.get((tran_name, ci))
-                    col = self.lgg.col_in_layer("PC", ci)
-                    col_rr = self.lgg.col_in_layer("PC", ci + 2)
+                    col = self.lgg.col_in_layer(self._plc_layer, ci)
+                    col_rr = self.lgg.col_in_layer(self._plc_layer, ci + 2)
                     # flipped: source at col_rr, drain at col
                     nodes_at_s_col = []
                     nodes_at_d_col = []
@@ -1229,7 +1238,7 @@ class CFET:
 
     def _prohibit_CA_contact_on_non_source_term_columns(self):
         for ci in self.sd_ci:
-            col = self.lgg.col_in_layer("PC", ci)
+            col = self.lgg.col_in_layer(self._plc_layer, ci)
             self.opt.log_comment(f"Prohibiting CA contact on non-source term at columns {col} ...")
             # PMOS region
             src_term_vars_pmos = self.gather_src_term_vars_in_pmos_region(col=col)
@@ -1590,7 +1599,7 @@ class CFET:
         # -1 => Free for all routing; 0 => No tolerance (dangerous); > 0 => preferred
         rt_cfg = self.cell_config.get("routing_tolerance", {}) or {}
         if rt_cfg.get("value") is True:
-            self.routing_tolerance = int(rt_cfg.get("tol", 1) * self.c_tech.get_pitch("PC"))
+            self.routing_tolerance = int(rt_cfg.get("tol", 1) * self.c_tech.get_pitch(self._plc_layer))
         else:
             self.routing_tolerance = -1
         rt.routing_localization_cfet(self)
@@ -1620,7 +1629,8 @@ class CFET:
         # ^ Route to I/O pins
         self._induce_external_routing_flow()
         # ^ CFET-specific: cross-device flows must use at least 1 cross-layer arc
-        rt.cfet_cross_device_via_lower_bound(self)
+        if self._cfg_get("cfet_cross_device_via_lb", True):
+            rt.cfet_cross_device_via_lower_bound(self)
         # ^ optional: tighten the HPWL lower bound with mandatory cross-device via cost
         if self._cfg_get("cfet_hpwl_via_tightening", False):
             rt.cfet_hpwl_via_cost_tightening(self)
@@ -1709,7 +1719,7 @@ class CFET:
             raise ValueError("M0ICPD requires power_row_indices for top-view power rows")
 
         power_row_indices = sorted(self.power_row_indices.keys())
-        m0_row_count = self.lgg.num_rows_in_layer("M0")
+        m0_row_count = self.lgg.num_rows_in_layer(self.c_tech.get_front_route_metal())
         invalid_m0_rows = [ri for ri in power_row_indices if not (0 <= ri < m0_row_count)]
         if invalid_m0_rows:
             raise ValueError(
@@ -1718,7 +1728,7 @@ class CFET:
             )
 
         power_row_coords_by_layer = {}
-        for layer_name in ("M0", "PC", "BPC"):
+        for layer_name in self.c_tech.get_route_metals_for_power_row_ban():
             row_count = self.lgg.num_rows_in_layer(layer_name)
             invalid_rows = [ri for ri in power_row_indices if not (0 <= ri < row_count)]
             if invalid_rows:
@@ -1754,7 +1764,7 @@ class CFET:
         self.opt.log_comment("Prohibiting routing to right cell boundaries ...")
         logger.info("\t==\tProhibiting routing to right cell boundaries ...")
         for possible_cpp in self.plc_ci:
-            right_bound_col = (possible_cpp + (_NUM_COL_SDG_ - 1)) * math.ceil(self.c_tech.get_pitch("PC"))
+            right_bound_col = (possible_cpp + (_NUM_COL_SDG_ - 1)) * math.ceil(self.c_tech.get_pitch(self._plc_layer))
             self.opt.log_comment(f"Prohibiting right bound {right_bound_col} at possible_cpp {possible_cpp}...")
             gathered_edge_vars = []
             for u_edge, v_edge in self.lgg.edges():
@@ -1768,7 +1778,7 @@ class CFET:
     def _bind_gate_sharing_to_columns(self):
         self.opt.log_comment("Binding gate sharing at column ...")
         for ci in self.plc_ci:
-            col_r = self.lgg.col_in_layer("PC", ci + 1)
+            col_r = self.lgg.col_in_layer(self._plc_layer, ci + 1)
             self.gate_share_at_col_vars[col_r] = self.opt.NewBoolVar(f"gate_share_at_col_{col_r}")
             gate_share = self.gate_share_at_col_vars[col_r]
 
@@ -1807,7 +1817,7 @@ class CFET:
             self.opt.AddBoolOr(placed_here).OnlyEnforceIf(gate_share.Not())
         # ^ always let the first gate col be shared
         self.opt.log_comment("Allowing gate sharing at the first column ...")
-        self.opt.Add(self.gate_share_at_col_vars[self.lgg.col_in_layer("PC", self.plc_ci[0] + 1)] == 1)
+        self.opt.Add(self.gate_share_at_col_vars[self.lgg.col_in_layer(self._plc_layer, self.plc_ci[0] + 1)] == 1)
 
     def _gate_cut_window(self):
         self.opt.log_comment("Defining gate cut windows ...")
@@ -1824,7 +1834,7 @@ class CFET:
                     break
             if can_be_oob:
                 max_col_in_gcw = max(gcw)
-                max_ci_in_gcw = self.lgg.col_index_in_layer("PC", max_col_in_gcw)
+                max_ci_in_gcw = self.lgg.col_index_in_layer(self._plc_layer, max_col_in_gcw)
                 plc_ci_in_gcw = max_ci_in_gcw - 1
                 self.opt.Add(self.cpp_cost >= plc_ci_in_gcw).OnlyEnforceIf(self.gate_cut_window_vars[gcw])
         # ^ Binding gate cut windows to gate cut
@@ -1855,7 +1865,7 @@ class CFET:
             pdb_var = self.db_pmos_cols_vars[ci]
             ndb_var = self.db_nmos_cols_vars[ci]
             try:
-                cr = self.lgg.col_in_layer("PC", ci + 1)
+                cr = self.lgg.col_in_layer(self._plc_layer, ci + 1)
             except IndexError:
                 continue
             # PMOS
@@ -1929,9 +1939,10 @@ class CFET:
                 self.opt.Add(sum(edge_vars_at_col) <= 1)
 
     def _only_one_miv_per_col(self):
-        self.opt.log_comment("At most one MIV (BPC to PC) per column")
-        bpc_layer_idx = self.lgg.layer_index("BPC")
-        pc_layer_idx = self.lgg.layer_index("PC")
+        bpc_name, pc_name = self.c_tech.get_intra_block_miv_pair()
+        self.opt.log_comment(f"At most one MIV ({bpc_name} to {pc_name}) per column")
+        bpc_layer_idx = self.lgg.layer_index(bpc_name)
+        pc_layer_idx = self.lgg.layer_index(pc_name)
         miv_edges_by_col = defaultdict(list)
         for (u, v), evar in self.edge_vars.items():
             # cross-layer edge between BPC and PC
@@ -1950,14 +1961,14 @@ class CFET:
         # Create sharing variables for all S/D columns
         all_sd_cols = set()
         for ci in self.plc_ci:
-            all_sd_cols.add(self.lgg.col_in_layer("PC", ci))
-            all_sd_cols.add(self.lgg.col_in_layer("PC", ci + 2))
+            all_sd_cols.add(self.lgg.col_in_layer(self._plc_layer, ci))
+            all_sd_cols.add(self.lgg.col_in_layer(self._plc_layer, ci + 2))
         for col in all_sd_cols:
             self.lisd_share_at_col_vars[col] = self.opt.NewBoolVar(f"lisd_share_at_col_{col}")
 
         for ci in self.plc_ci:
-            col = self.lgg.col_in_layer("PC", ci)
-            col_rr = self.lgg.col_in_layer("PC", ci + 2)
+            col = self.lgg.col_in_layer(self._plc_layer, ci)
+            col_rr = self.lgg.col_in_layer(self._plc_layer, ci + 2)
             lisd_share_col = self.lisd_share_at_col_vars[col]
             lisd_share_col_rr = self.lisd_share_at_col_vars[col_rr]
 
@@ -2005,7 +2016,7 @@ class CFET:
         """Limit CA via contacts at LISD-shared S/D columns (all rows)."""
         self.opt.log_comment(f"Limiting LISD contact to {num_contact} ...")
         for ci in self.sd_ci:
-            col = self.lgg.col_in_layer("PC", ci)
+            col = self.lgg.col_in_layer(self._plc_layer, ci)
             if col not in self.lisd_share_at_col_vars:
                 continue
             lisd_var = self.lisd_share_at_col_vars[col]
@@ -2018,7 +2029,7 @@ class CFET:
         """Limit CA via contacts at gate-shared columns (all rows)."""
         self.opt.log_comment(f"Limiting gate contact to {num_contact} ...")
         for ci in self.plc_ci:
-            col_r = self.lgg.col_in_layer("PC", ci + 1)  # gate column
+            col_r = self.lgg.col_in_layer(self._plc_layer, ci + 1)  # gate column
             if col_r not in self.gate_share_at_col_vars:
                 continue
             gs_var = self.gate_share_at_col_vars[col_r]

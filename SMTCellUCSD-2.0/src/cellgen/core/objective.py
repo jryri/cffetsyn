@@ -100,6 +100,13 @@ class Objective:
         return net_span
 
     @staticmethod
+    def fdm_penalty(finfet):
+        """Minimize field-drain merge count (+1 CPP each in the WSUM table)."""
+        if not getattr(finfet, "fdm_pair_vars", None):
+            return 0
+        return sum(finfet.fdm_pair_vars.values())
+
+    @staticmethod
     def gate_sharing(finfet):
         """
         Objective: Maximize gate sharing.
@@ -264,6 +271,29 @@ class Objective:
             return finfet.opt.NewConstant(0)
 
         return sum(pin_separation_terms)
+
+    @staticmethod
+    def cffet_npvp_utilization(finfet):
+        """
+        Maximize CFFET NPNP tier usage (FFET-inspired dual-block spread).
+
+        Requires ``tier_occupied_vars`` / ``npvp_spread_vars`` from
+        ``CFFET.tier_utilization.init_npvp_utilization_vars``.
+        """
+        score = 0
+        for var in getattr(finfet, "tier_occupied_vars", {}).values():
+            score += var
+        for var in getattr(finfet, "npvp_spread_vars", {}).values():
+            score += var
+        return score
+
+    @staticmethod
+    def cffet_npvp_block_imbalance(finfet):
+        """Minimize |back-block devices − front-block devices|."""
+        var = getattr(finfet, "npvp_block_imbalance_var", None)
+        if var is None:
+            return 0
+        return var
 
     @staticmethod
     def top_layer_usage(finfet):
