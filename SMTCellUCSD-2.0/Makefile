@@ -213,6 +213,27 @@ else
 	@echo "ERROR: 'make verify_pins' wired for TECH=CFFET only (got $(TECH))."; exit 1
 endif
 
+postsim_lvs:
+ifeq ($(TECH),CFFET)
+	@mkdir -p $(OUT_DIR)/gds $(OUT_DIR)/postsim
+	$(foreach CELL,$(CELL_NAME),\
+		$(QUEUE) $(PYTHON) -m src.cellgen.postprocess.gds_CFFET_SH \
+			--result_file $(OUT_DIR)/result/$(CELL).res \
+			--subckt_name $(CELL) \
+			--layer $(LAYER_FILE) \
+			--gds_file $(OUT_DIR)/gds/$(CELL).gds && \
+		$(QUEUE) $(PYTHON) -m src.cellgen.postprocess.postsim_lvs \
+			--cell $(CELL) \
+			--res $(OUT_DIR)/result/$(CELL).res \
+			--cdl $(CDL_FILE) \
+			--var $(OUT_DIR)/result/$(CELL).var \
+			--config $(OUT_DIR)/config/$(CELL).json \
+			--layer $(LAYER_FILE) \
+			| tee $(OUT_DIR)/postsim/$(CELL).lvs;)
+else
+	@echo "ERROR: 'make postsim_lvs' wired for TECH=CFFET only (got $(TECH))."; exit 1
+endif
+
 gds_to_gdt:
 	mkdir -p $(OUT_DIR)/gdt
 	$(GDS2GDT) $(OUT_DIR)/gds/$(LIBNAME).gds -o $(OUT_DIR)/gdt/$(LIBNAME).gdt
